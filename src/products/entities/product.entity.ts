@@ -9,7 +9,7 @@ import {
 
 @Entity('products')
 export class Product {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   @ApiProperty({ description: 'The unique identifier for a product' })
   id: number;
 

@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ProductsModule } from './products/products.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppDataSource } from './config/data-source';
+import { AppDataSource } from './data-source';
 
 @Module({
   imports: [

@@ -5,7 +5,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { AppDataSource } from './config/data-source';
+import { AppDataSource } from './data-source';
 
 async function bootstrap() {
   // Initialize the data source

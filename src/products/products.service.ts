@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CustomException } from 'src/config/custom-exception';
-import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import {
@@ -13,6 +12,7 @@ import { Cart, Comment, Product } from './entities';
 import { CartRepository } from './repositories/cart.repository';
 import { CommentRepository } from './repositories/comment.repository';
 import { ProductsRepository } from './repositories/products.repository';
+import { ValidationService } from './validation-properties.service';
 
 @Injectable()
 export class ProductsService {
@@ -20,15 +20,20 @@ export class ProductsService {
     private readonly productsRepo: ProductsRepository,
     private readonly cartRepo: CartRepository,
     private readonly commentRepo: CommentRepository,
+    private readonly validationService: ValidationService,
   ) {}
 
+  private readonly validationRules = {
+    name: (value: any) => typeof value === 'string' && value.trim().length > 0,
+    description: (value: any) =>
+      typeof value === 'string' && value.trim().length > 0,
+    price: (value: any) => typeof value === 'number' && value > 0,
+    stock: (value: any) => Number.isInteger(value) && value >= 0,
+  };
+
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
-    try {
-      return await this.productsRepo.createProduct(createProductDto);
-    } catch (error) {
-      CustomLogger.error('Error creating product', error);
-      throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, error);
-    }
+    this.validationService.validate(createProductDto, this.validationRules);
+    return this.productsRepo.createProduct(createProductDto);
   }
 
   async findAllProducts(
@@ -36,102 +41,68 @@ export class ProductsService {
     sort: string,
     filter: any,
   ): Promise<Product[]> {
-    try {
-      return await this.productsRepo.findAll({ sort, ...filter }, pagination);
-    } catch (error) {
-      CustomLogger.error('Error fetching products', error);
-      throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, error);
-    }
+    return this.productsRepo.findAll({ sort, ...filter }, pagination);
   }
 
   async findProductById(id: number): Promise<Product> {
-    try {
-      const product = await this.productsRepo.findOneById(id);
-      if (!product) {
-        throw CustomException.fromErrorEnum(Errors.E_0002_NOT_FOUND_ERROR);
-      }
-      return product;
-    } catch (error) {
-      CustomLogger.error(`Error fetching product with ID ${id}`, error);
-      throw CustomException.fromErrorEnum(Errors.E_0002_NOT_FOUND_ERROR, error);
-    }
+    return this.throwIfNotFound(
+      await this.productsRepo.findOneById(id),
+      'Product',
+    );
   }
 
   async updateProduct(
     id: number,
     updateProductDto: UpdateProductDto,
   ): Promise<Product> {
-    try {
-      return await this.productsRepo.updateProduct(id, updateProductDto);
-    } catch (error) {
-      CustomLogger.error('Error updating product', error);
-      throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, error);
-    }
+    this.validationService.validate(updateProductDto, this.validationRules);
+    return this.throwIfNotFound(
+      await this.productsRepo.updateProduct(id, updateProductDto),
+      'Product',
+    );
   }
 
   async removeProduct(id: number): Promise<void> {
-    try {
-      return await this.productsRepo.removeProduct(id);
-    } catch (error) {
-      CustomLogger.error(`Error removing product with ID ${id}`, error);
-      throw CustomException.fromErrorEnum(Errors.E_0002_NOT_FOUND_ERROR, error);
-    }
+    const product = await this.findProductById(id);
+    await this.productsRepo.removeProduct(product.id);
   }
 
   async addToCart(addToCartDto: AddToCartDto): Promise<Cart> {
-    try {
-      const product = await this.findProductById(addToCartDto.productId);
-      return this.cartRepo.addToCart(addToCartDto, product);
-    } catch (error) {
-      CustomLogger.error('Error adding to cart', error);
-      throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, error);
-    }
+    const product = await this.findProductById(addToCartDto.productId);
+    return this.cartRepo.addToCart(addToCartDto, product);
   }
 
   async findCart(paginationInfo: PaginationInfo): Promise<Cart[]> {
-    try {
-      return this.cartRepo.findCart(paginationInfo);
-    } catch (error) {
-      CustomLogger.error('Error fetching cart', error);
-      throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, error);
-    }
+    return this.cartRepo.findCart(paginationInfo);
   }
 
   async removeFromCart(id: number): Promise<void> {
-    try {
-      const cartItem = await this.cartRepo.findOneById(id);
-      if (!cartItem) {
-        throw CustomException.fromErrorEnum(Errors.E_0002_NOT_FOUND_ERROR);
-      }
-      await this.cartRepo.removeCartItem(id);
-    } catch (error) {
-      CustomLogger.error(`Error removing cart item with ID ${id}`, error);
-      throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, error);
-    }
+    const cartItem = this.throwIfNotFound(
+      await this.cartRepo.findOneById(id),
+      'Cart item',
+    );
+    await this.cartRepo.removeCartItem(cartItem.id);
   }
 
   async addComment(createCommentDto: CreateCommentDto): Promise<Comment> {
-    try {
-      const product = await this.findProductById(createCommentDto.productId);
-      return this.commentRepo.addComment(createCommentDto, product);
-    } catch (error) {
-      CustomLogger.error('Error adding comment', error);
-      throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, error);
-    }
+    const product = await this.findProductById(createCommentDto.productId);
+    return this.commentRepo.addComment(createCommentDto, product);
   }
 
   async findAllComments(
     productId: number,
     paginationInfo: PaginationInfo,
   ): Promise<Comment[]> {
-    try {
-      return this.commentRepo.findAllComments(productId, paginationInfo);
-    } catch (error) {
-      CustomLogger.error(
-        `Error fetching comments for product ${productId}`,
-        error,
-      );
-      throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, error);
+    await this.findProductById(productId);
+    return this.commentRepo.findAllComments(productId, paginationInfo);
+  }
+
+  private throwIfNotFound<T>(entity: T | null, entityName: string): T {
+    if (!entity) {
+      throw CustomException.fromErrorEnum(Errors.E_0002_NOT_FOUND_ERROR, {
+        errorDescription: `${entityName} not found.`,
+      });
     }
+    return entity;
   }
 }

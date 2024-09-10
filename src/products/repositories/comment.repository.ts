@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Comment } from '../entities/comment.entity';
-import { CreateCommentDto } from '../dtos';
-import { Product } from '../entities/product.entity';
+import { CustomException } from 'src/config/custom-exception';
+import { CustomLogger } from 'src/config/custom-logger';
+import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
+import { Repository, SelectQueryBuilder } from 'typeorm';
+import { CreateCommentDto } from '../dtos';
+import { Comment } from '../entities/comment.entity';
+import { Product } from '../entities/product.entity';
 
 @Injectable()
 export class CommentRepository {
@@ -17,22 +20,49 @@ export class CommentRepository {
     createCommentDto: CreateCommentDto,
     product: Product,
   ): Promise<Comment> {
-    const comment = this.commentRepo.create({ ...createCommentDto, product });
-    return this.commentRepo.save(comment);
+    try {
+      const comment = this.commentRepo.create({ ...createCommentDto, product });
+      return await this.commentRepo.save(comment);
+    } catch (error) {
+      CustomLogger.error('Error adding comment', error);
+      throw CustomException.fromErrorEnum(
+        Errors.E_0013_COMMENT_CREATION_ERROR,
+        error,
+      );
+    }
   }
 
   async findAllComments(
     productId: number,
     pagination: PaginationInfo,
   ): Promise<Comment[]> {
-    const pageNumber = pagination.pageNumber || 0;
-    const pageSize = pagination.pageSize || 20;
-    const query = this.commentRepo
-      .createQueryBuilder('comment')
-      .where('comment.productId = :productId', { productId })
-      .skip((pageNumber - 1) * pageSize)
-      .take(pageSize);
+    try {
+      const qb = this.commentRepo.createQueryBuilder('comment');
+      qb.where('comment.productId = :productId', { productId });
 
-    return query.getMany();
+      this.applyPagination(qb, pagination);
+
+      return await qb.getMany();
+    } catch (error) {
+      CustomLogger.error(
+        `Error fetching comments for product ${productId}`,
+        error,
+      );
+      throw CustomException.fromErrorEnum(
+        Errors.E_0014_COMMENT_FETCH_ERROR,
+        error,
+      );
+    }
+  }
+
+  /**
+   * Helper method to apply pagination.
+   */
+  private applyPagination(
+    qb: SelectQueryBuilder<Comment>,
+    pagination: PaginationInfo,
+  ) {
+    const { pageNumber = 1, pageSize = 20 } = pagination;
+    qb.skip((pageNumber - 1) * pageSize).take(pageSize);
   }
 }

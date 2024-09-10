@@ -1,4 +1,3 @@
-import { Cart, Comment, Product } from 'src/products/entities';
 import { DataSource } from 'typeorm';
 
 export const AppDataSource = new DataSource({
@@ -6,8 +5,10 @@ export const AppDataSource = new DataSource({
   host: 'localhost',
   port: 5432,
   username: 'postgres',
-  password: 'your_password',
+  password: 'password',
   database: 'ge-svi-ecommerce',
-  entities: [Product, Cart, Comment],
-  synchronize: true,
+  entities: ['dist/**/*.entity.js'],
+  migrations: ['dist/migrations/*.js'],
+  synchronize: false,
+  logging: true,
 });

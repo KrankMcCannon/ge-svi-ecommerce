@@ -4,7 +4,7 @@ import { Product } from './product.entity';
 
 @Entity('comments')
 export class Comment {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   @ApiProperty({ description: 'The unique identifier for a comment' })
   id: number;
 

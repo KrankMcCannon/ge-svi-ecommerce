@@ -4,7 +4,7 @@ import { Product } from './product.entity';
 
 @Entity('carts')
 export class Cart {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   @ApiProperty({ description: 'The unique identifier for a cart item' })
   id: number;
 

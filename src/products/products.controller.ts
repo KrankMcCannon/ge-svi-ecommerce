@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { ApiStandardList, StandardList } from 'src/config/standard-list.dto';
 import {
@@ -22,7 +23,6 @@ import {
 } from './dtos';
 import { Cart, Comment, Product } from './entities';
 import { ProductsService } from './products.service';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Products')
 @Controller('products')
@@ -63,10 +63,7 @@ export class ProductsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a product by ID' })
-  @ApiStandardResponse({
-    type: Product,
-    description: 'Get a product by ID',
-  })
+  @ApiStandardResponse({ type: Product, description: 'Get a product by ID' })
   async findOne(@Param('id') id: number): Promise<StandardResponse<Product>> {
     const product = await this.productsService.findProductById(id);
     return new StandardResponse(product);
@@ -93,9 +90,8 @@ export class ProductsController {
   @ApiOperation({ summary: 'Delete a product by ID' })
   @ApiStandardResponse({ type: Boolean, description: 'Delete a product by ID' })
   async remove(@Param('id') id: number): Promise<StandardResponse<boolean>> {
-    return await this.productsService
-      .removeProduct(id)
-      .then(() => new StandardResponse(true));
+    await this.productsService.removeProduct(id);
+    return new StandardResponse(true);
   }
 
   @Post('cart')
@@ -133,9 +129,8 @@ export class ProductsController {
   async removeFromCart(
     @Param('id') id: number,
   ): Promise<StandardResponse<boolean>> {
-    return await this.productsService
-      .removeFromCart(id)
-      .then(() => new StandardResponse(true));
+    await this.productsService.removeFromCart(id);
+    return new StandardResponse(true);
   }
 
   @Post(':id/comments')

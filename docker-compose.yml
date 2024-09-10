@@ -4,7 +4,7 @@ services:
     container_name: postgres
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: your_password
+      POSTGRES_PASSWORD: password
       POSTGRES_DB: ge-svi-ecommerce
     ports:
       - "5432:5432"
@@ -15,7 +15,7 @@ services:
     image: dpage/pgadmin4
     container_name: pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: edoardo.valentini@live.it
+      PGADMIN_DEFAULT_EMAIL: ex@mple.com
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
       - "5050:80"
