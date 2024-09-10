@@ -23,6 +23,7 @@ import {
 } from './dtos';
 import { Cart, Comment, Product } from './entities';
 import { ProductsService } from './products.service';
+import { PaginationInfoPipe } from 'src/config/pagination-info.pipe';
 
 @ApiTags('Products')
 @Controller('products')
@@ -49,7 +50,7 @@ export class ProductsController {
     description: 'Get a list of products with pagination',
   })
   async findAll(
-    @Query() paginationInfo: PaginationInfo,
+    @Query(new PaginationInfoPipe()) paginationInfo: PaginationInfo,
     @Query('sort') sort?: string,
     @Query() filter?: any,
   ): Promise<StandardList<Product>> {
@@ -114,7 +115,7 @@ export class ProductsController {
     description: 'Get a list of products in the cart',
   })
   async findCart(
-    @Query() paginationInfo: PaginationInfo,
+    @Query(new PaginationInfoPipe()) paginationInfo: PaginationInfo,
   ): Promise<StandardList<Cart>> {
     const cartItems = await this.productsService.findCart(paginationInfo);
     return new StandardList(cartItems, cartItems.length, paginationInfo);
@@ -154,7 +155,7 @@ export class ProductsController {
   })
   async findAllComments(
     @Param('id') productId: number,
-    @Query() paginationInfo: PaginationInfo,
+    @Query(new PaginationInfoPipe()) paginationInfo: PaginationInfo,
   ): Promise<StandardList<Comment>> {
     const comments = await this.productsService.findAllComments(
       productId,

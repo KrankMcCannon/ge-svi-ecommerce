@@ -11,21 +11,18 @@ export class PaginationInfoPipe implements PipeTransform {
     let pageSize = 20;
 
     if (paginationEnabled) {
-      // Validate pageNumber
       if (value.pageNumber && isNaN(Number(value.pageNumber))) {
         throw CustomException.fromErrorEnum(
           Errors.E_0001_GENERIC_ERROR,
           'Invalid pageNumber',
         );
       }
-      // Validate pageSize
       if (value.pageSize && isNaN(Number(value.pageSize))) {
         throw CustomException.fromErrorEnum(
           Errors.E_0001_GENERIC_ERROR,
           'Invalid pageSize',
         );
       }
-
       pageNumber = Number(value.pageNumber) || 0;
       pageSize = Number(value.pageSize) || 20;
     }

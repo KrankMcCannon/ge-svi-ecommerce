@@ -23,15 +23,31 @@ export class ProductsRepository {
   }
 
   async findAll(query: any, pagination: PaginationInfo): Promise<Product[]> {
-    const qb = this.productRepo.createQueryBuilder('product');
-    this.applyFilters(qb, query);
-    this.applyPagination(qb, pagination);
-
-    return await qb.getMany();
+    try {
+      const qb = this.productRepo.createQueryBuilder('product');
+      this.applyFilters(qb, query);
+      this.applyPagination(qb, pagination);
+      return await qb.getMany();
+    } catch (error) {
+      CustomLogger.error('Error fetching products', error);
+      throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, error);
+    }
   }
 
   async findOneById(id: number): Promise<Product> {
-    return this.findEntityById(id, 'Product');
+    return await this.findEntityById(id, 'Product');
+  }
+
+  async findByName(name: string): Promise<Product | null> {
+    try {
+      return await this.productRepo.findOne({ where: { name } });
+    } catch (error) {
+      CustomLogger.error(`Error fetching product by name: ${name}`, error);
+      throw CustomException.fromErrorEnum(
+        Errors.E_0009_PRODUCT_NOT_FOUND,
+        error,
+      );
+    }
   }
 
   async updateProduct(
@@ -40,14 +56,11 @@ export class ProductsRepository {
   ): Promise<Product> {
     try {
       const result = await this.productRepo.update(id, updateProductDto);
-
-      // Check if any rows were affected
       if (result.affected === 0) {
         throw CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND, {
           errorDescription: 'Product not found',
         });
       }
-
       return await this.findOneById(id);
     } catch (error) {
       CustomLogger.error(`Error updating product with ID ${id}`, error);
@@ -68,6 +81,15 @@ export class ProductsRepository {
       }
       await this.productRepo.remove(product);
     } catch (error) {
+      if (error.code === '23503') {
+        throw CustomException.fromErrorEnum(
+          Errors.E_0010_PRODUCT_DELETE_CONSTRAINT,
+          {
+            errorDescription:
+              'Product cannot be deleted due to associated records.',
+          },
+        );
+      }
       CustomLogger.error(`Error removing product with ID ${id}`, error);
       throw CustomException.fromErrorEnum(
         Errors.E_0008_PRODUCT_REMOVE_ERROR,
@@ -88,6 +110,24 @@ export class ProductsRepository {
         Errors.E_0006_PRODUCT_CREATION_ERROR,
         error,
       );
+    }
+  }
+
+  private async findEntityById(
+    id: number,
+    entityName: string,
+  ): Promise<Product> {
+    try {
+      const entity = await this.productRepo.findOne({ where: { id } });
+      if (!entity) {
+        throw CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND, {
+          errorDescription: `${entityName} not found.`,
+        });
+      }
+      return entity;
+    } catch (error) {
+      CustomLogger.error(`Error fetching ${entityName} with ID ${id}`, error);
+      throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, error);
     }
   }
 
@@ -112,23 +152,5 @@ export class ProductsRepository {
   ) {
     const { pageNumber = 0, pageSize = 20 } = pagination;
     qb.skip(pageNumber * pageSize).take(pageSize);
-  }
-
-  private async findEntityById(
-    id: number,
-    entityName: string,
-  ): Promise<Product> {
-    try {
-      const entity = await this.productRepo.findOne({ where: { id } });
-      if (!entity) {
-        throw CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND, {
-          errorDescription: `${entityName} not found.`,
-        });
-      }
-      return entity;
-    } catch (error) {
-      CustomLogger.error(`Error fetching ${entityName} with ID ${id}`, error);
-      throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, error);
-    }
   }
 }

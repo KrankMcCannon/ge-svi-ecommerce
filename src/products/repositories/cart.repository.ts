@@ -18,14 +18,23 @@ export class CartRepository {
 
   async addToCart(addToCartDto: AddToCartDto, product: Product): Promise<Cart> {
     try {
-      const cart = this.cartRepo.create({
-        product,
-        quantity: addToCartDto.quantity,
+      let cartItem = await this.cartRepo.findOne({
+        where: { product: { id: product.id } },
       });
-      return await this.cartRepo.save(cart);
+
+      if (cartItem) {
+        cartItem.quantity += addToCartDto.quantity;
+      } else {
+        cartItem = this.cartRepo.create({
+          product,
+          quantity: addToCartDto.quantity,
+        });
+      }
+
+      return await this.cartRepo.save(cartItem);
     } catch (error) {
       CustomLogger.error('Error adding product to cart', error);
-      throw CustomException.fromErrorEnum(Errors.E_0010_CART_ADD_ERROR, error);
+      throw CustomException.fromErrorEnum(Errors.E_0013_CART_ADD_ERROR, error);
     }
   }
 
@@ -37,7 +46,7 @@ export class CartRepository {
     } catch (error) {
       CustomLogger.error('Error fetching cart items', error);
       throw CustomException.fromErrorEnum(
-        Errors.E_0012_CART_ITEM_NOT_FOUND,
+        Errors.E_0015_CART_ITEM_NOT_FOUND,
         error,
       );
     }
@@ -47,7 +56,7 @@ export class CartRepository {
     try {
       const cart = await this.cartRepo.findOne({ where: { id } });
       if (!cart) {
-        throw CustomException.fromErrorEnum(Errors.E_0012_CART_ITEM_NOT_FOUND, {
+        throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
           errorDescription: 'Cart item not found',
         });
       }
@@ -62,14 +71,14 @@ export class CartRepository {
     try {
       const result = await this.cartRepo.delete(id);
       if (result.affected === 0) {
-        throw CustomException.fromErrorEnum(Errors.E_0012_CART_ITEM_NOT_FOUND, {
+        throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
           errorDescription: 'Cart item not found',
         });
       }
     } catch (error) {
       CustomLogger.error(`Error removing cart item with ID ${id}`, error);
       throw CustomException.fromErrorEnum(
-        Errors.E_0011_CART_REMOVE_ERROR,
+        Errors.E_0014_CART_REMOVE_ERROR,
         error,
       );
     }

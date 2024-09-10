@@ -39,6 +39,7 @@ export class CustomError extends Error {
 }
 
 export const Errors = {
+  // General
   E_0000_OK: new ErrorEnumValue(0, ErrorLevel.OK, 'OK', HttpStatus.OK),
   E_0001_GENERIC_ERROR: new ErrorEnumValue(
     1,
@@ -70,6 +71,8 @@ export const Errors = {
     'System has detected an integrity error',
     HttpStatus.CONFLICT,
   ),
+
+  // Product Errors
   E_0006_PRODUCT_CREATION_ERROR: new ErrorEnumValue(
     6,
     ErrorLevel.ERROR,
@@ -94,40 +97,74 @@ export const Errors = {
     'Product not found',
     HttpStatus.NOT_FOUND,
   ),
-  E_0010_CART_ADD_ERROR: new ErrorEnumValue(
+  E_0010_PRODUCT_DELETE_CONSTRAINT: new ErrorEnumValue(
     10,
+    ErrorLevel.ERROR,
+    'Product cannot be deleted due to associated records',
+    HttpStatus.CONFLICT,
+  ),
+  E_0011_INSUFFICIENT_STOCK: new ErrorEnumValue(
+    11,
+    ErrorLevel.ERROR,
+    'Insufficient stock for the product',
+    HttpStatus.CONFLICT,
+  ),
+  E_0012_DUPLICATE_PRODUCT: new ErrorEnumValue(
+    12,
+    ErrorLevel.ERROR,
+    'A product with this name already exists',
+    HttpStatus.CONFLICT,
+  ),
+
+  // Cart Errors
+  E_0013_CART_ADD_ERROR: new ErrorEnumValue(
+    13,
     ErrorLevel.ERROR,
     'Error occurred while adding item to cart',
     HttpStatus.UNPROCESSABLE_ENTITY,
   ),
-  E_0011_CART_REMOVE_ERROR: new ErrorEnumValue(
-    11,
+  E_0014_CART_REMOVE_ERROR: new ErrorEnumValue(
+    14,
     ErrorLevel.ERROR,
     'Error occurred while removing item from cart',
     HttpStatus.INTERNAL_SERVER_ERROR,
   ),
-  E_0012_CART_ITEM_NOT_FOUND: new ErrorEnumValue(
-    12,
+  E_0015_CART_ITEM_NOT_FOUND: new ErrorEnumValue(
+    15,
     ErrorLevel.ERROR,
     'Cart item not found',
     HttpStatus.NOT_FOUND,
   ),
-  E_0013_COMMENT_CREATION_ERROR: new ErrorEnumValue(
-    13,
+  E_0016_CART_EMPTY: new ErrorEnumValue(
+    16,
+    ErrorLevel.ERROR,
+    'The cart is empty',
+    HttpStatus.BAD_REQUEST,
+  ),
+
+  // Comment Errors
+  E_0017_COMMENT_CREATION_ERROR: new ErrorEnumValue(
+    17,
     ErrorLevel.ERROR,
     'Error occurred while creating comment',
     HttpStatus.UNPROCESSABLE_ENTITY,
   ),
-  E_0014_COMMENT_FETCH_ERROR: new ErrorEnumValue(
-    14,
+  E_0018_COMMENT_FETCH_ERROR: new ErrorEnumValue(
+    18,
     ErrorLevel.ERROR,
     'Error occurred while fetching comments',
     HttpStatus.INTERNAL_SERVER_ERROR,
   ),
-  E_0015_COMMENT_NOT_FOUND: new ErrorEnumValue(
-    15,
+  E_0019_COMMENT_NOT_FOUND: new ErrorEnumValue(
+    19,
     ErrorLevel.ERROR,
     'Comment not found',
     HttpStatus.NOT_FOUND,
+  ),
+  E_0020_INVALID_COMMENT: new ErrorEnumValue(
+    20,
+    ErrorLevel.ERROR,
+    'Comment text is too short',
+    HttpStatus.BAD_REQUEST,
   ),
 };

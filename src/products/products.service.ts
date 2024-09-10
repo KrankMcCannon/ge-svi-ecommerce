@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CustomException } from 'src/config/custom-exception';
+import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { ValidationProperties } from './../config/validation-properties';
@@ -31,8 +32,23 @@ export class ProductsService {
   };
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
-    ValidationProperties.validate(createProductDto, this.validationRules);
-    return this.productsRepo.createProduct(createProductDto);
+    try {
+      ValidationProperties.validate(createProductDto, this.validationRules);
+
+      const existingProduct = await this.productsRepo.findByName(
+        createProductDto.name,
+      );
+      if (existingProduct) {
+        throw CustomException.fromErrorEnum(Errors.E_0012_DUPLICATE_PRODUCT, {
+          errorDescription: 'A product with this name already exists.',
+        });
+      }
+
+      return await this.productsRepo.createProduct(createProductDto);
+    } catch (error) {
+      CustomLogger.error('Error creating product', error);
+      throw error;
+    }
   }
 
   async findAllProducts(
@@ -40,60 +56,142 @@ export class ProductsService {
     sort: string,
     filter: any,
   ): Promise<Product[]> {
-    return this.productsRepo.findAll({ sort, ...filter }, pagination);
+    try {
+      return await this.productsRepo.findAll({ sort, ...filter }, pagination);
+    } catch (error) {
+      CustomLogger.error(
+        'Error fetching products with pagination and filtering',
+        error,
+      );
+      throw error;
+    }
   }
 
   async findProductById(id: number): Promise<Product> {
-    return this.throwIfNotFound(
-      await this.productsRepo.findOneById(id),
-      'Product',
-    );
+    if (!id || isNaN(id)) {
+      throw CustomException.fromErrorEnum(Errors.E_0004_VALIDATION_KO, {
+        errorDescription: 'Invalid product ID format.',
+      });
+    }
+
+    try {
+      const product = await this.productsRepo.findOneById(id);
+      return this.throwIfNotFound(product, 'Product');
+    } catch (error) {
+      CustomLogger.error(`Error fetching product with ID ${id}`, error);
+      throw error;
+    }
   }
 
   async updateProduct(
     id: number,
     updateProductDto: UpdateProductDto,
   ): Promise<Product> {
-    ValidationProperties.validate(updateProductDto, this.validationRules);
-    return this.throwIfNotFound(
-      await this.productsRepo.updateProduct(id, updateProductDto),
-      'Product',
-    );
+    try {
+      ValidationProperties.validate(updateProductDto, this.validationRules);
+      const product = await this.productsRepo.updateProduct(
+        id,
+        updateProductDto,
+      );
+      return this.throwIfNotFound(product, 'Product');
+    } catch (error) {
+      CustomLogger.error(`Error updating product with ID ${id}`, error);
+      throw error;
+    }
   }
 
   async removeProduct(id: number): Promise<void> {
-    const product = await this.findProductById(id);
-    await this.productsRepo.removeProduct(product.id);
+    try {
+      const product = await this.findProductById(id);
+      await this.productsRepo.removeProduct(product.id);
+    } catch (error) {
+      CustomLogger.error(`Error removing product with ID ${id}`, error);
+      throw error;
+    }
   }
 
   async addToCart(addToCartDto: AddToCartDto): Promise<Cart> {
-    const product = await this.findProductById(addToCartDto.productId);
-    return this.cartRepo.addToCart(addToCartDto, product);
+    try {
+      const product = await this.findProductById(addToCartDto.productId);
+      if (addToCartDto.quantity > product.stock) {
+        throw CustomException.fromErrorEnum(Errors.E_0011_INSUFFICIENT_STOCK, {
+          errorDescription: 'Insufficient stock for the product.',
+        });
+      }
+
+      return await this.cartRepo.addToCart(addToCartDto, product);
+    } catch (error) {
+      CustomLogger.error('Error adding product to cart', error);
+      throw error;
+    }
   }
 
   async findCart(paginationInfo: PaginationInfo): Promise<Cart[]> {
-    return this.cartRepo.findCart(paginationInfo);
+    try {
+      const cartItems = await this.cartRepo.findCart(paginationInfo);
+
+      if (!cartItems.length) {
+        throw CustomException.fromErrorEnum(Errors.E_0016_CART_EMPTY, {
+          errorDescription: 'The cart is empty.',
+        });
+      }
+
+      return cartItems;
+    } catch (error) {
+      CustomLogger.error('Error fetching cart', error);
+      throw error;
+    }
   }
 
   async removeFromCart(id: number): Promise<void> {
-    const cartItem = this.throwIfNotFound(
-      await this.cartRepo.findOneById(id),
-      'Cart item',
-    );
-    await this.cartRepo.removeCartItem(cartItem.id);
+    try {
+      const cartItem = await this.cartRepo.findOneById(id);
+      if (!cartItem) {
+        throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
+          errorDescription: 'Cart item not found.',
+        });
+      }
+      await this.cartRepo.removeCartItem(id);
+    } catch (error) {
+      CustomLogger.error(`Error removing cart item with ID ${id}`, error);
+      throw error;
+    }
   }
 
   async addComment(createCommentDto: CreateCommentDto): Promise<Comment> {
-    const product = await this.findProductById(createCommentDto.productId);
-    return this.commentRepo.addComment(createCommentDto, product);
+    try {
+      const product = await this.findProductById(createCommentDto.productId);
+
+      if (
+        !createCommentDto.content ||
+        createCommentDto.content.trim().length < 5
+      ) {
+        throw CustomException.fromErrorEnum(Errors.E_0020_INVALID_COMMENT, {
+          errorDescription: 'Comment content is too short.',
+        });
+      }
+
+      return await this.commentRepo.addComment(createCommentDto, product);
+    } catch (error) {
+      CustomLogger.error('Error adding comment', error);
+      throw error;
+    }
   }
 
   async findAllComments(
     productId: number,
     paginationInfo: PaginationInfo,
   ): Promise<Comment[]> {
-    await this.findProductById(productId);
-    return this.commentRepo.findAllComments(productId, paginationInfo);
+    try {
+      await this.findProductById(productId);
+      return await this.commentRepo.findAllComments(productId, paginationInfo);
+    } catch (error) {
+      CustomLogger.error(
+        `Error fetching comments for product ID ${productId}`,
+        error,
+      );
+      throw error;
+    }
   }
 
   private throwIfNotFound<T>(entity: T | null, entityName: string): T {

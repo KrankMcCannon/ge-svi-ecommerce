@@ -26,7 +26,7 @@ export class CommentRepository {
     } catch (error) {
       CustomLogger.error('Error adding comment', error);
       throw CustomException.fromErrorEnum(
-        Errors.E_0013_COMMENT_CREATION_ERROR,
+        Errors.E_0017_COMMENT_CREATION_ERROR,
         error,
       );
     }
@@ -49,7 +49,7 @@ export class CommentRepository {
         error,
       );
       throw CustomException.fromErrorEnum(
-        Errors.E_0014_COMMENT_FETCH_ERROR,
+        Errors.E_0018_COMMENT_FETCH_ERROR,
         error,
       );
     }
