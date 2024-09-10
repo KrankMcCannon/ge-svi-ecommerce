@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
+import { ValidationProperties } from './../config/validation-properties';
 import {
   AddToCartDto,
   CreateCommentDto,
@@ -12,7 +13,6 @@ import { Cart, Comment, Product } from './entities';
 import { CartRepository } from './repositories/cart.repository';
 import { CommentRepository } from './repositories/comment.repository';
 import { ProductsRepository } from './repositories/products.repository';
-import { ValidationService } from './validation-properties.service';
 
 @Injectable()
 export class ProductsService {
@@ -20,7 +20,6 @@ export class ProductsService {
     private readonly productsRepo: ProductsRepository,
     private readonly cartRepo: CartRepository,
     private readonly commentRepo: CommentRepository,
-    private readonly validationService: ValidationService,
   ) {}
 
   private readonly validationRules = {
@@ -32,7 +31,7 @@ export class ProductsService {
   };
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
-    this.validationService.validate(createProductDto, this.validationRules);
+    ValidationProperties.validate(createProductDto, this.validationRules);
     return this.productsRepo.createProduct(createProductDto);
   }
 
@@ -55,7 +54,7 @@ export class ProductsService {
     id: number,
     updateProductDto: UpdateProductDto,
   ): Promise<Product> {
-    this.validationService.validate(updateProductDto, this.validationRules);
+    ValidationProperties.validate(updateProductDto, this.validationRules);
     return this.throwIfNotFound(
       await this.productsRepo.updateProduct(id, updateProductDto),
       'Product',
