@@ -8,7 +8,6 @@ export function bootstrapCheck(): void {
 }
 
 function checkEnvironmentVariablesPresence(): void {
-  //required environment variables list
   const requiredVariables = [
     'PORT',
     'IP',
@@ -17,18 +16,19 @@ function checkEnvironmentVariablesPresence(): void {
     'DATABASE_PORT',
   ];
 
-  //get every element that is missing
   const missingVariables = requiredVariables.filter(
-    (elem) => !EnvironmentVariables[elem],
+    (key) =>
+      EnvironmentVariables[key] === undefined ||
+      EnvironmentVariables[key] === null,
   );
+
   if (missingVariables.length > 0) {
+    const missingVarsString = missingVariables.join(', ');
     CustomLogger.error(
-      'The following environment variables are missing:',
-      missingVariables.join(', '),
+      `The following environment variables are missing: ${missingVarsString}`,
     );
-    throw CustomException.fromErrorEnum(
-      Errors.E_0005_INTEGRITY_ERROR,
+    throw CustomException.fromErrorEnum(Errors.E_0005_INTEGRITY_ERROR, {
       missingVariables,
-    );
+    });
   }
 }

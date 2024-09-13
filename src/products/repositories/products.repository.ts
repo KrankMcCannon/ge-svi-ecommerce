@@ -1,24 +1,19 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { CustomException } from 'src/config/custom-exception';
 import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
-import {
-  DataSource,
-  EntityManager,
-  Repository,
-  SelectQueryBuilder,
-} from 'typeorm';
+import { EntityManager, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateProductDto, UpdateProductDto } from '../dtos';
 import { Product } from '../entities/product.entity';
 
 @Injectable()
 export class ProductsRepository {
-  private readonly productRepo: Repository<Product>;
-
-  constructor(private readonly dataSource: DataSource) {
-    this.productRepo = this.dataSource.getRepository(Product);
-  }
+  constructor(
+    @InjectRepository(Product)
+    private readonly productRepo: Repository<Product>,
+  ) {}
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
     return await this.saveEntity(

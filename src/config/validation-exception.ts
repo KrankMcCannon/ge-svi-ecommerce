@@ -4,30 +4,44 @@ import { Errors } from './errors';
 
 export class ValidationException extends CustomException {
   constructor(errors: ValidationError[]) {
-    const exceptionInfo = CustomException.getExceptionInfo(
-      Errors.E_0004_VALIDATION_KO,
-      ValidationException.decodeValidationErrors(errors),
+    const messages = ValidationException.flattenValidationErrors(errors);
+
+    super(
+      Errors.E_0004_VALIDATION_KO.errorCode,
+      Errors.E_0004_VALIDATION_KO.errorLevel,
+      Errors.E_0004_VALIDATION_KO.errorDescription,
+      Errors.E_0004_VALIDATION_KO.errorStatus,
+      messages,
     );
-    super(exceptionInfo.body, exceptionInfo.status);
   }
 
-  private static decodeValidationErrors(
+  private static flattenValidationErrors(
     errors: ValidationError[],
-    parent = '',
+    parentPath = '',
   ): string[] {
-    parent = parent ? `${parent}.` : parent;
-    return errors.flatMap<string>((elem) => {
-      if (elem.constraints) {
-        const constraints = Object.values(elem.constraints);
-        return parent
-          ? constraints.map((constraint) => `${parent}${constraint}`)
-          : constraints;
-      } else {
-        return ValidationException.decodeValidationErrors(
-          elem.children,
-          `${parent}${elem.property}`,
+    const messages: string[] = [];
+
+    for (const error of errors) {
+      const propertyPath = parentPath
+        ? `${parentPath}.${error.property}`
+        : error.property;
+
+      if (error.constraints) {
+        for (const constraint of Object.values(error.constraints)) {
+          messages.push(`${propertyPath}: ${constraint}`);
+        }
+      }
+
+      if (error.children && error.children.length > 0) {
+        messages.push(
+          ...ValidationException.flattenValidationErrors(
+            error.children,
+            propertyPath,
+          ),
         );
       }
-    });
+    }
+
+    return messages;
   }
 }

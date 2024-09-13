@@ -1,142 +1,119 @@
 import { applyDecorators, Type } from '@nestjs/common';
 import { ApiOkResponse, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { PaginationInfo } from './pagination-info.dto';
-import { StandardResponse } from './standard-response.dto';
 
 export class StandardList<T> {
   /**
    * Extracted data list
    */
+  @ApiProperty()
   list: T[];
 
   /**
    * Total number of elements
    */
   @ApiProperty()
-  totalElements: number;
+  totalElements: number = 0;
 
   /**
    * If pagination is enabled
    */
   @ApiProperty()
-  paged: boolean;
+  paged: boolean = false;
 
   /**
    * Selected page number
    */
   @ApiProperty()
-  pageNumber: number;
+  pageNumber: number = 0;
 
   /**
    * Page size requested
    */
   @ApiProperty()
-  pageSize: number;
+  pageSize: number = 0;
 
   /**
    * Total number of pages
    */
   @ApiProperty()
-  totalPages: number;
+  totalPages: number = 1;
 
   /**
    * Number of elements
    */
   @ApiProperty()
-  localElements: number;
+  localElements: number = 0;
 
   /**
    * If page has content
    */
   @ApiProperty()
-  hasContent: boolean;
+  hasContent: boolean = false;
 
   /**
    * If the returned page is the first page
    */
   @ApiProperty()
-  first: boolean;
+  first: boolean = true;
 
   /**
    * If the returned page is the last page
    */
   @ApiProperty()
-  last: boolean;
+  last: boolean = true;
 
   /**
    * If there is a next page
    */
   @ApiProperty()
-  hasNext: boolean;
+  hasNext: boolean = false;
 
   /**
    * If there is a previous page
    */
   @ApiProperty()
-  hasPrevious: boolean;
+  hasPrevious: boolean = false;
 
-  constructor(list: T[], count?: number, paginationInfo?: PaginationInfo) {
-    this.localElements = list.length;
-    this.list = list;
+  constructor(list: T[], count = 0, paginationInfo?: PaginationInfo) {
+    this.list = list || [];
+    this.localElements = this.list.length;
     this.hasContent = this.localElements > 0;
+    this.totalElements = count || this.localElements;
 
-    if (count) {
-      this.totalElements = count;
-    }
-
-    // elements taken from input
     if (paginationInfo) {
       this.paged = paginationInfo.paginationEnabled;
       this.pageNumber = paginationInfo.pageNumber;
       this.pageSize = paginationInfo.pageSize;
+
+      if (this.paged && this.pageSize > 0) {
+        this.totalPages = Math.ceil(this.totalElements / this.pageSize);
+        this.first = this.pageNumber === 0;
+        this.last = this.pageNumber >= this.totalPages - 1;
+        this.hasNext = !this.last;
+        this.hasPrevious = !this.first;
+      }
     } else {
-      this.paged = false;
-    }
-
-    if (count && paginationInfo) {
-      // total pages calculation
-      // If paginated, calculate by dividing the total elements by the page size, rounding up
-      // if not paginated, it will always be equal to 1
-      this.totalPages = this.paged
-        ? Math.ceil(this.totalElements / this.pageSize)
-        : 1;
-
-      // check if last page, based on current page number and total pages
-      this.last = this.pageNumber === this.totalPages - 1;
-      this.hasNext = !this.last;
-
-      // check if first page, based on current page number
-      this.first = this.pageNumber === 0;
-      this.hasPrevious = !this.first;
+      this.totalPages = 1;
     }
   }
 }
 
-//swagger decorator
-export const ApiStandardList = <TModel extends Type<any>>(options: {
-  type: TModel;
+export const ApiStandardList = <TModel extends Type<any>>(options?: {
   description?: string;
-}) =>
-  applyDecorators(
+  type?: TModel;
+}) => {
+  return applyDecorators(
     ApiOkResponse({
-      description: options.description,
+      description: options?.description || 'Standard paginated list response',
       schema: {
         allOf: [
-          { $ref: getSchemaPath(StandardResponse) },
+          { $ref: getSchemaPath(StandardList) },
           {
             properties: {
-              data: {
-                allOf: [
-                  { $ref: getSchemaPath(StandardList) },
-                  {
-                    properties: {
-                      list: {
-                        type: 'array',
-                        items: { $ref: getSchemaPath(options.type) },
-                      },
-                    },
-                  },
-                ],
+              list: {
+                type: 'array',
+                items: { $ref: getSchemaPath(options?.type) },
               },
             },
           },
@@ -144,3 +121,4 @@ export const ApiStandardList = <TModel extends Type<any>>(options: {
       },
     }),
   );
+};

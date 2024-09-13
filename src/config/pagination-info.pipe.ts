@@ -1,36 +1,25 @@
-import { Injectable, PipeTransform } from '@nestjs/common';
-import { CustomException } from './custom-exception';
-import { Errors } from './errors';
+import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import { validateSync } from 'class-validator';
 import { PaginationInfo } from './pagination-info.dto';
 
 @Injectable()
 export class PaginationInfoPipe implements PipeTransform {
   transform(value: any): PaginationInfo {
-    const paginationEnabled = value.paginationEnabled === 'true';
-    let pageNumber = 0;
-    let pageSize = 20;
-
-    if (paginationEnabled) {
-      if (value.pageNumber && isNaN(Number(value.pageNumber))) {
-        throw CustomException.fromErrorEnum(
-          Errors.E_0001_GENERIC_ERROR,
-          'Invalid pageNumber',
-        );
-      }
-      if (value.pageSize && isNaN(Number(value.pageSize))) {
-        throw CustomException.fromErrorEnum(
-          Errors.E_0001_GENERIC_ERROR,
-          'Invalid pageSize',
-        );
-      }
-      pageNumber = Number(value.pageNumber) || 0;
-      pageSize = Number(value.pageSize) || 20;
+    // Ensure value is an object
+    if (!value || typeof value !== 'object') {
+      value = {};
     }
 
-    return new PaginationInfo({
-      paginationEnabled,
-      pageNumber,
-      pageSize,
-    });
+    // Transform plain object to PaginationInfo instance
+    const paginationInfo = plainToInstance(PaginationInfo, value);
+
+    // Validate the instance
+    const errors = validateSync(paginationInfo, { whitelist: true });
+    if (errors.length > 0) {
+      throw new BadRequestException('Invalid pagination parameters');
+    }
+
+    return paginationInfo;
   }
 }

@@ -1,25 +1,20 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { CustomException } from 'src/config/custom-exception';
 import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
-import {
-  DataSource,
-  EntityManager,
-  Repository,
-  SelectQueryBuilder,
-} from 'typeorm';
+import { EntityManager, Repository, SelectQueryBuilder } from 'typeorm';
 import { AddToCartDto } from '../dtos/add-to-cart.dto';
 import { Cart } from '../entities/cart.entity';
 import { Product } from '../entities/product.entity';
 
 @Injectable()
 export class CartRepository {
-  private readonly cartRepo: Repository<Cart>;
-
-  constructor(private readonly dataSource: DataSource) {
-    this.cartRepo = this.dataSource.getRepository(Cart);
-  }
+  constructor(
+    @InjectRepository(Cart)
+    private readonly cartRepo: Repository<Cart>,
+  ) {}
 
   async addToCart(
     addToCartDto: AddToCartDto,

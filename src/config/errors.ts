@@ -7,7 +7,8 @@ export enum ErrorLevel {
 }
 
 export class ErrorEnumValue {
-  errorStatus: number; //take from @nestjs/common HttpStatus
+  //take from @nestjs/common HttpStatus
+  errorStatus: number;
   errorCode: number;
   errorLevel: ErrorLevel;
   errorDescription: string;
@@ -31,7 +32,8 @@ export class CustomError extends Error {
   errorStatus: number;
 
   constructor(errorEnumValue: ErrorEnumValue) {
-    super(errorEnumValue.errorDescription); // sets the message property of the Error
+    // sets the message property of the Error
+    super(errorEnumValue.errorDescription);
     this.errorCode = errorEnumValue.errorCode;
     this.errorLevel = errorEnumValue.errorLevel;
     this.errorStatus = errorEnumValue.errorStatus;
@@ -172,5 +174,13 @@ export const Errors = {
     ErrorLevel.ERROR,
     'Comment text is too short',
     HttpStatus.BAD_REQUEST,
+  ),
+
+  // Internal Server Error
+  E_9999_INTERNAL_SERVER_ERROR: new ErrorEnumValue(
+    9999,
+    ErrorLevel.ERROR,
+    'Internal Server Error',
+    HttpStatus.INTERNAL_SERVER_ERROR,
   ),
 };

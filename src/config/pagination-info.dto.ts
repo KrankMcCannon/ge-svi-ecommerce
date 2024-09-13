@@ -1,5 +1,5 @@
-import { IsBoolean, IsInt } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { IsBoolean, IsInt, Min } from 'class-validator';
 import { EnvironmentVariables } from './environment-variables';
 
 interface PaginationInfoInput {
@@ -9,40 +9,53 @@ interface PaginationInfoInput {
 }
 
 export class PaginationInfo {
-  @Transform(({ value }) => value === 'true' || value === true, {
-    toClassOnly: true,
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return true;
   })
   @IsBoolean()
-  readonly paginationEnabled: boolean = true;
+  paginationEnabled: boolean = true;
 
-  @Transform(({ value }) => Number(value), { toClassOnly: true })
+  @Transform(({ value }) => Number(value))
   @IsInt()
-  readonly pageNumber: number = 0;
+  @Min(0)
+  pageNumber: number = 0;
 
-  @Transform(({ value }) => Number(value), { toClassOnly: true })
+  @Transform(({ value }) => Number(value))
   @IsInt()
-  readonly pageSize: number = 0;
+  @Min(1)
+  pageSize: number = EnvironmentVariables.DEFAULT_PAGINATION_PAGE_SIZE || 20;
 
-  private readonly _numSkip: number = 0;
+  private _numSkip: number = 0;
   get numSkip(): number {
     return this._numSkip;
   }
 
-  constructor(data: PaginationInfoInput) {
-    if (data.paginationEnabled) {
-      this.paginationEnabled = String(data.paginationEnabled) === 'true';
+  constructor(data?: PaginationInfoInput) {
+    if (data) {
+      if (data.paginationEnabled !== undefined) {
+        this.paginationEnabled = String(data.paginationEnabled) === 'true';
+      }
+
+      if (this.paginationEnabled) {
+        this.pageNumber = data.pageNumber ? Number(data.pageNumber) : 0;
+        this.pageSize = data.pageSize
+          ? Number(data.pageSize)
+          : EnvironmentVariables.DEFAULT_PAGINATION_PAGE_SIZE || 20;
+      } else {
+        // If pagination is disabled, set defaults
+        this.pageNumber = 0;
+        this.pageSize = 0;
+      }
+    } else {
+      // If data is undefined, use default values
+      this.paginationEnabled = true;
+      this.pageNumber = 0;
+      this.pageSize = EnvironmentVariables.DEFAULT_PAGINATION_PAGE_SIZE || 20;
     }
 
-    if (this.paginationEnabled) {
-      // assign pageNumber if present, otherwise 0
-      this.pageNumber = data.pageNumber ? Number(data.pageNumber) : 0;
-      // assign pageSize if present, otherwise default from configuration file
-      this.pageSize = data.pageSize
-        ? Number(data.pageSize)
-        : EnvironmentVariables.DEFAULT_PAGINATION_PAGE_SIZE;
-
-      // calculate number of elements to skip, multiplying page size for page number
-      this._numSkip = this.pageSize * this.pageNumber;
-    }
+    // Calculate number of elements to skip
+    this._numSkip = this.pageSize * this.pageNumber;
   }
 }

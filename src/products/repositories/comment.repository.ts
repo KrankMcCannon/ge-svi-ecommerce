@@ -1,20 +1,20 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { CustomException } from 'src/config/custom-exception';
 import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
-import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateCommentDto } from '../dtos/create-comment.dto';
 import { Comment } from '../entities/comment.entity';
 import { Product } from '../entities/product.entity';
 
 @Injectable()
 export class CommentRepository {
-  private readonly commentRepo: Repository<Comment>;
-
-  constructor(private readonly dataSource: DataSource) {
-    this.commentRepo = this.dataSource.getRepository(Comment);
-  }
+  constructor(
+    @InjectRepository(Comment)
+    private readonly commentRepo: Repository<Comment>,
+  ) {}
 
   async addComment(
     createCommentDto: CreateCommentDto,
