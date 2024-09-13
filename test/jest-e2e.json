@@ -6,9 +6,7 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "setupFilesAfterEnv": ["<rootDir>/test/setup.ts"],
-  "globals": {
-    "ts-jest": {
-      "tsconfig": "<rootDir>/test/tsconfig.json"
-    }
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/src/$1"
   }
 }

@@ -3,9 +3,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { TestDataSource } from '../src/data-source-test';
+import { QueryRunner } from 'typeorm';
 
 describe('Application E2E Tests', () => {
   let app: INestApplication;
+  let queryRunner: QueryRunner;
 
   beforeAll(async () => {
     if (!TestDataSource.isInitialized) {
@@ -25,17 +27,20 @@ describe('Application E2E Tests', () => {
     await app.init();
   });
 
-  afterAll(async () => {
-    await app.close();
-    await TestDataSource.destroy();
+  beforeEach(async () => {
+    queryRunner = TestDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
   });
 
   afterEach(async () => {
-    // Reset the database after each test
-    for (const entity of TestDataSource.entityMetadatas) {
-      const repository = TestDataSource.getRepository(entity.name);
-      await repository.clear();
-    }
+    await queryRunner.rollbackTransaction();
+    await queryRunner.release();
+  });
+
+  afterAll(async () => {
+    await app.close();
+    await TestDataSource.destroy();
   });
 
   describe('Products API', () => {

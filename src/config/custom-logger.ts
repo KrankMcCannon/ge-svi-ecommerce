@@ -10,14 +10,17 @@ export class CustomLogger {
     ...params: any[]
   ): void {
     const formattedMessage = CustomLogger.formatMessage(message, params);
-    if (error) {
+
+    if (error instanceof Error) {
+      // Log error with stack if it's an instance of Error
       this._logger.error(
         formattedMessage,
-        error.stack || error.toString(),
+        error.stack || error.message,
         context,
       );
     } else {
-      this._logger.error(formattedMessage, context);
+      // Log full object if it's not an Error instance
+      this._logger.error(formattedMessage, JSON.stringify(error), context);
     }
   }
 

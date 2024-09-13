@@ -59,7 +59,7 @@ export class ProductsRepository {
     const repo = manager ? manager.getRepository(Product) : this.productRepo;
     try {
       await repo.update(id, updateProductDto);
-      return await this.findOneById(id);
+      return await this.findOneById(id, manager);
     } catch (error) {
       CustomLogger.error(`Error updating product with ID ${id}`, error);
       throw CustomException.fromErrorEnum(
@@ -71,7 +71,7 @@ export class ProductsRepository {
 
   async removeProduct(id: string, manager?: EntityManager): Promise<void> {
     try {
-      const product = await this.findOneById(id);
+      const product = await this.findOneById(id, manager);
       if (!product) {
         throw CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND, {
           errorDescription: 'Product not found',
