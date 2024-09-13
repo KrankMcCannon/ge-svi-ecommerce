@@ -7,6 +7,9 @@ import {
   Patch,
   Post,
   Query,
+  UsePipes,
+  ValidationPipe,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
@@ -33,12 +36,13 @@ export class ProductsController {
   @Post()
   @ApiOperation({ summary: 'Create a new product' })
   @ApiStandardResponse({
-    type: CreateProductDto,
+    type: Product,
     description: 'Create a new product',
   })
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   async create(
     @Body() createProductDto: CreateProductDto,
-  ): Promise<StandardResponse<CreateProductDto>> {
+  ): Promise<StandardResponse<Product>> {
     const product = await this.productsService.createProduct(createProductDto);
     return new StandardResponse(product);
   }
@@ -49,6 +53,7 @@ export class ProductsController {
     type: Product,
     description: 'Get a list of products with pagination',
   })
+  @UsePipes(new ValidationPipe({ transform: true }))
   async findAll(
     @Query(new PaginationInfoPipe()) paginationInfo: PaginationInfo,
     @Query('sort') sort?: string,
@@ -65,7 +70,9 @@ export class ProductsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a product by ID' })
   @ApiStandardResponse({ type: Product, description: 'Get a product by ID' })
-  async findOne(@Param('id') id: number): Promise<StandardResponse<Product>> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<StandardResponse<Product>> {
     const product = await this.productsService.findProductById(id);
     return new StandardResponse(product);
   }
@@ -73,13 +80,14 @@ export class ProductsController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update a product by ID' })
   @ApiStandardResponse({
-    type: UpdateProductDto,
+    type: Product,
     description: 'Update a product by ID',
   })
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   async update(
-    @Param('id') id: number,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateProductDto: UpdateProductDto,
-  ): Promise<StandardResponse<UpdateProductDto>> {
+  ): Promise<StandardResponse<Product>> {
     const updatedProduct = await this.productsService.updateProduct(
       id,
       updateProductDto,
@@ -90,7 +98,9 @@ export class ProductsController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a product by ID' })
   @ApiStandardResponse({ type: Boolean, description: 'Delete a product by ID' })
-  async remove(@Param('id') id: number): Promise<StandardResponse<boolean>> {
+  async remove(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<StandardResponse<boolean>> {
     await this.productsService.removeProduct(id);
     return new StandardResponse(true);
   }
@@ -98,9 +108,10 @@ export class ProductsController {
   @Post('cart')
   @ApiOperation({ summary: 'Add a product to the cart' })
   @ApiStandardResponse({
-    type: AddToCartDto,
+    type: Cart,
     description: 'Add a product to the cart',
   })
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   async addToCart(
     @Body() addToCartDto: AddToCartDto,
   ): Promise<StandardResponse<Cart>> {
@@ -114,6 +125,7 @@ export class ProductsController {
     type: Cart,
     description: 'Get a list of products in the cart',
   })
+  @UsePipes(new ValidationPipe({ transform: true }))
   async findCart(
     @Query(new PaginationInfoPipe()) paginationInfo: PaginationInfo,
   ): Promise<StandardList<Cart>> {
@@ -128,7 +140,7 @@ export class ProductsController {
     description: 'Remove a product from the cart',
   })
   async removeFromCart(
-    @Param('id') id: number,
+    @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<StandardResponse<boolean>> {
     await this.productsService.removeFromCart(id);
     return new StandardResponse(true);
@@ -137,12 +149,15 @@ export class ProductsController {
   @Post(':id/comments')
   @ApiOperation({ summary: 'Add a comment to a product' })
   @ApiStandardResponse({
-    type: CreateCommentDto,
+    type: Comment,
     description: 'Add a comment to a product',
   })
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   async addComment(
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() createCommentDto: CreateCommentDto,
   ): Promise<StandardResponse<Comment>> {
+    createCommentDto.productId = id;
     const comment = await this.productsService.addComment(createCommentDto);
     return new StandardResponse(comment);
   }
@@ -153,8 +168,9 @@ export class ProductsController {
     type: Comment,
     description: 'Get a list of comments for a product',
   })
+  @UsePipes(new ValidationPipe({ transform: true }))
   async findAllComments(
-    @Param('id') productId: number,
+    @Param('id', new ParseUUIDPipe()) productId: string,
     @Query(new PaginationInfoPipe()) paginationInfo: PaginationInfo,
   ): Promise<StandardList<Comment>> {
     const comments = await this.productsService.findAllComments(

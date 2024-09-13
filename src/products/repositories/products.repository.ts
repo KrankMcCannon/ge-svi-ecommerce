@@ -1,19 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
-import { Product } from '../entities/product.entity';
-import { CreateProductDto, UpdateProductDto } from '../dtos';
-import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { CustomException } from 'src/config/custom-exception';
 import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
+import { PaginationInfo } from 'src/config/pagination-info.dto';
+import {
+  DataSource,
+  EntityManager,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
+import { CreateProductDto, UpdateProductDto } from '../dtos';
+import { Product } from '../entities/product.entity';
 
 @Injectable()
 export class ProductsRepository {
-  constructor(
-    @InjectRepository(Product)
-    private readonly productRepo: Repository<Product>,
-  ) {}
+  private readonly productRepo: Repository<Product>;
+
+  constructor(private readonly dataSource: DataSource) {
+    this.productRepo = this.dataSource.getRepository(Product);
+  }
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
     return await this.saveEntity(
@@ -26,6 +31,7 @@ export class ProductsRepository {
     try {
       const qb = this.productRepo.createQueryBuilder('product');
       this.applyFilters(qb, query);
+      this.applySorting(qb, query.sort);
       this.applyPagination(qb, pagination);
       return await qb.getMany();
     } catch (error) {
@@ -34,8 +40,8 @@ export class ProductsRepository {
     }
   }
 
-  async findOneById(id: number): Promise<Product> {
-    return await this.findEntityById(id, 'Product');
+  async findOneById(id: string, manager?: EntityManager): Promise<Product> {
+    return await this.findEntityById(id, 'Product', manager);
   }
 
   async findByName(name: string): Promise<Product | null> {
@@ -51,16 +57,13 @@ export class ProductsRepository {
   }
 
   async updateProduct(
-    id: number,
+    id: string,
     updateProductDto: UpdateProductDto,
+    manager?: EntityManager,
   ): Promise<Product> {
+    const repo = manager ? manager.getRepository(Product) : this.productRepo;
     try {
-      const result = await this.productRepo.update(id, updateProductDto);
-      if (result.affected === 0) {
-        throw CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND, {
-          errorDescription: 'Product not found',
-        });
-      }
+      await repo.update(id, updateProductDto);
       return await this.findOneById(id);
     } catch (error) {
       CustomLogger.error(`Error updating product with ID ${id}`, error);
@@ -71,7 +74,7 @@ export class ProductsRepository {
     }
   }
 
-  async removeProduct(id: number): Promise<void> {
+  async removeProduct(id: string, manager?: EntityManager): Promise<void> {
     try {
       const product = await this.findOneById(id);
       if (!product) {
@@ -79,7 +82,29 @@ export class ProductsRepository {
           errorDescription: 'Product not found',
         });
       }
-      await this.productRepo.remove(product);
+
+      const repo = manager ? manager.getRepository(Product) : this.productRepo;
+
+      // Check for associated records
+      const associatedRecords = await repo
+        .createQueryBuilder('product')
+        .leftJoin('product.cartItems', 'cartItem')
+        .leftJoin('product.comments', 'comment')
+        .where('product.id = :id', { id })
+        .andWhere('cartItem.id IS NOT NULL OR comment.id IS NOT NULL')
+        .getOne();
+
+      if (associatedRecords) {
+        throw CustomException.fromErrorEnum(
+          Errors.E_0010_PRODUCT_DELETE_CONSTRAINT,
+          {
+            errorDescription:
+              'Product cannot be deleted due to associated records.',
+          },
+        );
+      }
+
+      await repo.delete(id);
     } catch (error) {
       if (error.code === '23503') {
         throw CustomException.fromErrorEnum(
@@ -95,6 +120,19 @@ export class ProductsRepository {
         Errors.E_0008_PRODUCT_REMOVE_ERROR,
         error,
       );
+    }
+  }
+
+  async saveProduct(
+    product: Product,
+    manager?: EntityManager,
+  ): Promise<Product> {
+    const repo = manager ? manager.getRepository(Product) : this.productRepo;
+    try {
+      return await repo.save(product);
+    } catch (error) {
+      CustomLogger.error('Error saving product', error);
+      throw error;
     }
   }
 
@@ -114,11 +152,13 @@ export class ProductsRepository {
   }
 
   private async findEntityById(
-    id: number,
+    id: string,
     entityName: string,
+    manager?: EntityManager,
   ): Promise<Product> {
+    const repo = manager ? manager.getRepository(Product) : this.productRepo;
     try {
-      const entity = await this.productRepo.findOne({ where: { id } });
+      const entity = await repo.findOne({ where: { id } });
       if (!entity) {
         throw CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND, {
           errorDescription: `${entityName} not found.`,
@@ -133,16 +173,39 @@ export class ProductsRepository {
 
   private applyFilters(qb: SelectQueryBuilder<Product>, query: any) {
     if (query.name) {
-      qb.andWhere('product.name LIKE :name', { name: `%${query.name}%` });
+      qb.andWhere('product.name ILIKE :name', { name: `%${query.name}%` });
     }
     if (query.category) {
       qb.andWhere('product.category = :category', { category: query.category });
     }
-    if (query.priceRange) {
+    if (query.minPrice && query.maxPrice) {
       qb.andWhere('product.price BETWEEN :min AND :max', {
-        min: query.priceRange.min,
-        max: query.priceRange.max,
+        min: query.minPrice,
+        max: query.maxPrice,
       });
+    } else if (query.minPrice) {
+      qb.andWhere('product.price >= :min', { min: query.minPrice });
+    } else if (query.maxPrice) {
+      qb.andWhere('product.price <= :max', { max: query.maxPrice });
+    }
+  }
+
+  private applySorting(qb: SelectQueryBuilder<Product>, sort?: string) {
+    if (sort) {
+      const order = sort.startsWith('-') ? 'DESC' : 'ASC';
+      const field = sort.startsWith('-') ? sort.substring(1) : sort;
+      const validFields = [
+        'name',
+        'price',
+        'category',
+        'createdAt',
+        'updatedAt',
+      ];
+      if (validFields.includes(field)) {
+        qb.orderBy(`product.${field}`, order);
+      }
+    } else {
+      qb.orderBy('product.createdAt', 'DESC');
     }
   }
 

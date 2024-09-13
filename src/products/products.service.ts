@@ -3,7 +3,6 @@ import { CustomException } from 'src/config/custom-exception';
 import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
-import { ValidationProperties } from './../config/validation-properties';
 import {
   AddToCartDto,
   CreateCommentDto,
@@ -14,6 +13,7 @@ import { Cart, Comment, Product } from './entities';
 import { CartRepository } from './repositories/cart.repository';
 import { CommentRepository } from './repositories/comment.repository';
 import { ProductsRepository } from './repositories/products.repository';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class ProductsService {
@@ -21,20 +21,11 @@ export class ProductsService {
     private readonly productsRepo: ProductsRepository,
     private readonly cartRepo: CartRepository,
     private readonly commentRepo: CommentRepository,
+    private readonly dataSource: DataSource,
   ) {}
-
-  private readonly validationRules = {
-    name: (value: any) => typeof value === 'string' && value.trim().length > 0,
-    description: (value: any) =>
-      typeof value === 'string' && value.trim().length > 0,
-    price: (value: any) => typeof value === 'number' && value > 0,
-    stock: (value: any) => Number.isInteger(value) && value >= 0,
-  };
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
     try {
-      ValidationProperties.validate(createProductDto, this.validationRules);
-
       const existingProduct = await this.productsRepo.findByName(
         createProductDto.name,
       );
@@ -43,7 +34,6 @@ export class ProductsService {
           errorDescription: 'A product with this name already exists.',
         });
       }
-
       return await this.productsRepo.createProduct(createProductDto);
     } catch (error) {
       CustomLogger.error('Error creating product', error);
@@ -67,8 +57,8 @@ export class ProductsService {
     }
   }
 
-  async findProductById(id: number): Promise<Product> {
-    if (!id || isNaN(id)) {
+  async findProductById(id: string): Promise<Product> {
+    if (!id) {
       throw CustomException.fromErrorEnum(Errors.E_0004_VALIDATION_KO, {
         errorDescription: 'Invalid product ID format.',
       });
@@ -84,93 +74,124 @@ export class ProductsService {
   }
 
   async updateProduct(
-    id: number,
+    id: string,
     updateProductDto: UpdateProductDto,
   ): Promise<Product> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
     try {
-      ValidationProperties.validate(updateProductDto, this.validationRules);
-      const product = await this.productsRepo.updateProduct(
+      const updatedProduct = await this.productsRepo.updateProduct(
         id,
         updateProductDto,
+        queryRunner.manager,
       );
-      return this.throwIfNotFound(product, 'Product');
+      await queryRunner.commitTransaction();
+      return this.throwIfNotFound(updatedProduct, 'Product');
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       CustomLogger.error(`Error updating product with ID ${id}`, error);
       throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
-  async removeProduct(id: number): Promise<void> {
+  async removeProduct(id: string): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
     try {
-      const product = await this.findProductById(id);
-      await this.productsRepo.removeProduct(product.id);
+      await this.productsRepo.removeProduct(id, queryRunner.manager);
+      await queryRunner.commitTransaction();
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       CustomLogger.error(`Error removing product with ID ${id}`, error);
       throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
   async addToCart(addToCartDto: AddToCartDto): Promise<Cart> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
     try {
-      const product = await this.findProductById(addToCartDto.productId);
+      const product = await this.productsRepo.findOneById(
+        addToCartDto.productId,
+        queryRunner.manager,
+      );
+
       if (addToCartDto.quantity > product.stock) {
         throw CustomException.fromErrorEnum(Errors.E_0011_INSUFFICIENT_STOCK, {
           errorDescription: 'Insufficient stock for the product.',
         });
       }
 
-      return await this.cartRepo.addToCart(addToCartDto, product);
+      product.stock -= addToCartDto.quantity;
+      await this.productsRepo.saveProduct(product, queryRunner.manager);
+
+      const cartItem = await this.cartRepo.addToCart(
+        addToCartDto,
+        product,
+        queryRunner.manager,
+      );
+
+      await queryRunner.commitTransaction();
+      return cartItem;
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       CustomLogger.error('Error adding product to cart', error);
       throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
   async findCart(paginationInfo: PaginationInfo): Promise<Cart[]> {
     try {
-      const cartItems = await this.cartRepo.findCart(paginationInfo);
-
-      if (!cartItems.length) {
-        throw CustomException.fromErrorEnum(Errors.E_0016_CART_EMPTY, {
-          errorDescription: 'The cart is empty.',
-        });
-      }
-
-      return cartItems;
+      return await this.cartRepo.findCart(paginationInfo);
     } catch (error) {
       CustomLogger.error('Error fetching cart', error);
       throw error;
     }
   }
 
-  async removeFromCart(id: number): Promise<void> {
+  async removeFromCart(id: string): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
     try {
-      const cartItem = await this.cartRepo.findOneById(id);
+      const cartItem = await this.cartRepo.findOneById(id, queryRunner.manager);
       if (!cartItem) {
-        throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
+        throw CustomException.fromErrorEnum(Errors.E_0016_CART_ITEM_NOT_FOUND, {
           errorDescription: 'Cart item not found.',
         });
       }
-      await this.cartRepo.removeCartItem(id);
+
+      const product = await this.productsRepo.findOneById(
+        cartItem.product.id,
+        queryRunner.manager,
+      );
+      product.stock += cartItem.quantity;
+      await this.productsRepo.saveProduct(product, queryRunner.manager);
+
+      await this.cartRepo.removeCartItem(id, queryRunner.manager);
+
+      await queryRunner.commitTransaction();
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       CustomLogger.error(`Error removing cart item with ID ${id}`, error);
       throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
   async addComment(createCommentDto: CreateCommentDto): Promise<Comment> {
     try {
       const product = await this.findProductById(createCommentDto.productId);
-
-      if (
-        !createCommentDto.content ||
-        createCommentDto.content.trim().length < 5
-      ) {
-        throw CustomException.fromErrorEnum(Errors.E_0020_INVALID_COMMENT, {
-          errorDescription: 'Comment content is too short.',
-        });
-      }
-
       return await this.commentRepo.addComment(createCommentDto, product);
     } catch (error) {
       CustomLogger.error('Error adding comment', error);
@@ -179,7 +200,7 @@ export class ProductsService {
   }
 
   async findAllComments(
-    productId: number,
+    productId: string,
     paginationInfo: PaginationInfo,
   ): Promise<Comment[]> {
     try {

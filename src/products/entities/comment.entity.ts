@@ -1,14 +1,24 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Product } from './product.entity';
 
 @Entity('comments')
 export class Comment {
   @PrimaryGeneratedColumn('uuid')
   @ApiProperty({ description: 'The unique identifier for a comment' })
-  id: number;
+  id: string;
 
-  @ManyToOne(() => Product, { eager: true })
+  @ManyToOne(() => Product, (product) => product.comments, {
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   @ApiProperty({ description: 'The product associated with the comment' })
   product: Product;
 
@@ -19,4 +29,20 @@ export class Comment {
   @Column()
   @ApiProperty({ description: 'The author of the comment' })
   author: string;
+
+  @CreateDateColumn()
+  @ApiProperty({
+    description: 'The date the comment was created',
+    type: 'string',
+    format: 'date-time',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  @ApiProperty({
+    description: 'The date the comment was last updated',
+    type: 'string',
+    format: 'date-time',
+  })
+  updatedAt: Date;
 }

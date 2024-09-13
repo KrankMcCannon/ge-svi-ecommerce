@@ -3,15 +3,18 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Cart } from './cart.entity';
+import { Comment } from './comment.entity';
 
 @Entity('products')
 export class Product {
   @PrimaryGeneratedColumn('uuid')
   @ApiProperty({ description: 'The unique identifier for a product' })
-  id: number;
+  id: string;
 
   @Column({ length: 255 })
   @ApiProperty({ description: 'The name of the product', maxLength: 255 })
@@ -48,4 +51,10 @@ export class Product {
     format: 'date-time',
   })
   updatedAt: Date;
+
+  @OneToMany(() => Comment, (comment) => comment.product)
+  comments: Comment[];
+
+  @OneToMany(() => Cart, (cart) => cart.product)
+  cartItems: Cart[];
 }

@@ -1,20 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { CustomException } from 'src/config/custom-exception';
 import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
-import { Repository, SelectQueryBuilder } from 'typeorm';
-import { CreateCommentDto } from '../dtos';
+import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
+import { CreateCommentDto } from '../dtos/create-comment.dto';
 import { Comment } from '../entities/comment.entity';
 import { Product } from '../entities/product.entity';
 
 @Injectable()
 export class CommentRepository {
-  constructor(
-    @InjectRepository(Comment)
-    private readonly commentRepo: Repository<Comment>,
-  ) {}
+  private readonly commentRepo: Repository<Comment>;
+
+  constructor(private readonly dataSource: DataSource) {
+    this.commentRepo = this.dataSource.getRepository(Comment);
+  }
 
   async addComment(
     createCommentDto: CreateCommentDto,
@@ -26,14 +26,14 @@ export class CommentRepository {
     } catch (error) {
       CustomLogger.error('Error adding comment', error);
       throw CustomException.fromErrorEnum(
-        Errors.E_0017_COMMENT_CREATION_ERROR,
+        Errors.E_0018_COMMENT_CREATION_ERROR,
         error,
       );
     }
   }
 
   async findAllComments(
-    productId: number,
+    productId: string,
     pagination: PaginationInfo,
   ): Promise<Comment[]> {
     try {
@@ -41,6 +41,7 @@ export class CommentRepository {
       qb.where('comment.productId = :productId', { productId });
 
       this.applyPagination(qb, pagination);
+      qb.orderBy('comment.createdAt', 'DESC');
 
       return await qb.getMany();
     } catch (error) {
@@ -49,20 +50,17 @@ export class CommentRepository {
         error,
       );
       throw CustomException.fromErrorEnum(
-        Errors.E_0018_COMMENT_FETCH_ERROR,
+        Errors.E_0019_COMMENT_FETCH_ERROR,
         error,
       );
     }
   }
 
-  /**
-   * Helper method to apply pagination.
-   */
   private applyPagination(
     qb: SelectQueryBuilder<Comment>,
     pagination: PaginationInfo,
   ) {
-    const { pageNumber = 1, pageSize = 20 } = pagination;
-    qb.skip((pageNumber - 1) * pageSize).take(pageSize);
+    const { pageNumber = 0, pageSize = 20 } = pagination;
+    qb.skip(pageNumber * pageSize).take(pageSize);
   }
 }

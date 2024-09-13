@@ -5,14 +5,8 @@ import {
 } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { AppDataSource } from './data-source';
 
 async function bootstrap() {
-  // Initialize the data source
-  await AppDataSource.initialize().catch((err) => {
-    console.error('Error during Data Source initialization:', err);
-  });
-
   // Create the application
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,

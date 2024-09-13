@@ -3,12 +3,20 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ProductsModule } from './products/products.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppDataSource } from './data-source';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      ...AppDataSource.options,
+      type: 'postgres',
+      host: 'localhost',
+      port: 5432,
+      username: 'postgres',
+      password: 'password',
+      database: 'ge-svi-ecommerce',
+      entities: [__dirname + '/**/*.entity.{js,ts}'],
+      migrations: [__dirname + '/migrations/*.{js,ts}'],
+      synchronize: false,
+      logging: true,
     }),
     ProductsModule,
   ],

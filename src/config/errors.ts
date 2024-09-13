@@ -123,46 +123,52 @@ export const Errors = {
     'Error occurred while adding item to cart',
     HttpStatus.UNPROCESSABLE_ENTITY,
   ),
-  E_0014_CART_REMOVE_ERROR: new ErrorEnumValue(
+  E_0014_CART_FETCH_ERROR: new ErrorEnumValue(
     14,
+    ErrorLevel.ERROR,
+    'Error occurred while fetching cart items',
+    HttpStatus.INTERNAL_SERVER_ERROR,
+  ),
+  E_0015_CART_REMOVE_ERROR: new ErrorEnumValue(
+    15,
     ErrorLevel.ERROR,
     'Error occurred while removing item from cart',
     HttpStatus.INTERNAL_SERVER_ERROR,
   ),
-  E_0015_CART_ITEM_NOT_FOUND: new ErrorEnumValue(
-    15,
+  E_0016_CART_ITEM_NOT_FOUND: new ErrorEnumValue(
+    16,
     ErrorLevel.ERROR,
     'Cart item not found',
     HttpStatus.NOT_FOUND,
   ),
-  E_0016_CART_EMPTY: new ErrorEnumValue(
-    16,
+  E_0017_CART_EMPTY: new ErrorEnumValue(
+    17,
     ErrorLevel.ERROR,
     'The cart is empty',
     HttpStatus.BAD_REQUEST,
   ),
 
   // Comment Errors
-  E_0017_COMMENT_CREATION_ERROR: new ErrorEnumValue(
-    17,
+  E_0018_COMMENT_CREATION_ERROR: new ErrorEnumValue(
+    18,
     ErrorLevel.ERROR,
     'Error occurred while creating comment',
     HttpStatus.UNPROCESSABLE_ENTITY,
   ),
-  E_0018_COMMENT_FETCH_ERROR: new ErrorEnumValue(
-    18,
+  E_0019_COMMENT_FETCH_ERROR: new ErrorEnumValue(
+    19,
     ErrorLevel.ERROR,
     'Error occurred while fetching comments',
     HttpStatus.INTERNAL_SERVER_ERROR,
   ),
-  E_0019_COMMENT_NOT_FOUND: new ErrorEnumValue(
-    19,
+  E_0020_COMMENT_NOT_FOUND: new ErrorEnumValue(
+    20,
     ErrorLevel.ERROR,
     'Comment not found',
     HttpStatus.NOT_FOUND,
   ),
-  E_0020_INVALID_COMMENT: new ErrorEnumValue(
-    20,
+  E_0021_INVALID_COMMENT: new ErrorEnumValue(
+    21,
     ErrorLevel.ERROR,
     'Comment text is too short',
     HttpStatus.BAD_REQUEST,
