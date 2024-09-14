@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { CartItem } from 'src/carts/entities/cartItem.entity';
 import {
   Column,
   CreateDateColumn,
@@ -7,34 +8,47 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Cart } from './cart.entity';
 import { Comment } from './comment.entity';
 
 @Entity('products')
 export class Product {
   @PrimaryGeneratedColumn('uuid')
-  @ApiProperty({ description: 'The unique identifier for a product' })
+  @ApiProperty({ description: 'Unique identifier for the product' })
   id: string;
 
   @Column({ length: 255 })
-  @ApiProperty({ description: 'The name of the product', maxLength: 255 })
+  @ApiProperty({ description: 'Name of the product', maxLength: 255 })
   name: string;
 
   @Column('text')
-  @ApiProperty({ description: 'The description of the product' })
+  @ApiProperty({ description: 'Description of the product' })
   description: string;
 
   @Column('decimal', { precision: 10, scale: 2 })
   @ApiProperty({
-    description: 'The price of the product',
+    description: 'Price of the product',
     type: 'number',
     format: 'decimal',
   })
   price: number;
 
   @Column({ default: 0 })
-  @ApiProperty({ description: 'The stock quantity of the product', default: 0 })
+  @ApiProperty({ description: 'Stock quantity of the product', default: 0 })
   stock: number;
+
+  @OneToMany(() => CartItem, (cartItem) => cartItem.product)
+  @ApiProperty({
+    description: 'The cart items associated with the product',
+    type: () => [CartItem],
+  })
+  cartItems: CartItem[];
+
+  @OneToMany(() => Comment, (comment) => comment.product, { cascade: true })
+  @ApiProperty({
+    description: 'The comments associated with the product',
+    type: () => [Comment],
+  })
+  comments: Comment[];
 
   @CreateDateColumn()
   @ApiProperty({
@@ -51,10 +65,4 @@ export class Product {
     format: 'date-time',
   })
   updatedAt: Date;
-
-  @OneToMany(() => Comment, (comment) => comment.product)
-  comments: Comment[];
-
-  @OneToMany(() => Cart, (cart) => cart.product)
-  cartItems: Cart[];
 }

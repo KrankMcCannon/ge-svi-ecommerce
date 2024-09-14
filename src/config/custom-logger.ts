@@ -18,9 +18,12 @@ export class CustomLogger {
         error.stack || error.message,
         context,
       );
-    } else {
+    } else if (typeof error === 'object') {
       // Log full object if it's not an Error instance
       this._logger.error(formattedMessage, JSON.stringify(error), context);
+    } else {
+      // Log message without error object
+      this._logger.error(formattedMessage, error, context);
     }
   }
 

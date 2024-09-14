@@ -28,7 +28,7 @@ function checkEnvironmentVariablesPresence(): void {
       `The following environment variables are missing: ${missingVarsString}`,
     );
     throw CustomException.fromErrorEnum(Errors.E_0005_INTEGRITY_ERROR, {
-      missingVariables,
+      data: { missingVariables: missingVarsString },
     });
   }
 }

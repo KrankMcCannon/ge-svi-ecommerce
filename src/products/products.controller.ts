@@ -4,29 +4,26 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  UseGuards,
   UsePipes,
   ValidationPipe,
-  ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
+import { PaginationInfoPipe } from 'src/config/pagination-info.pipe';
 import { ApiStandardList, StandardList } from 'src/config/standard-list.dto';
 import {
   ApiStandardResponse,
   StandardResponse,
 } from 'src/config/standard-response.dto';
-import {
-  AddToCartDto,
-  CreateCommentDto,
-  CreateProductDto,
-  UpdateProductDto,
-} from './dtos';
-import { Cart, Comment, Product } from './entities';
+import { JwtAuthGuard } from 'src/config/strategies/jwt-auth.guard';
+import { CreateCommentDto, CreateProductDto, UpdateProductDto } from './dtos';
+import { Comment, Product } from './entities';
 import { ProductsService } from './products.service';
-import { PaginationInfoPipe } from 'src/config/pagination-info.pipe';
 
 @ApiTags('Products')
 @Controller('products')
@@ -34,6 +31,8 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new product' })
   @ApiStandardResponse({
     type: Product,
@@ -78,6 +77,8 @@ export class ProductsController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a product by ID' })
   @ApiStandardResponse({
     type: Product,
@@ -96,6 +97,8 @@ export class ProductsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a product by ID' })
   @ApiStandardResponse({ type: Boolean, description: 'Delete a product by ID' })
   async remove(
@@ -105,48 +108,9 @@ export class ProductsController {
     return new StandardResponse(true);
   }
 
-  @Post('cart')
-  @ApiOperation({ summary: 'Add a product to the cart' })
-  @ApiStandardResponse({
-    type: Cart,
-    description: 'Add a product to the cart',
-  })
-  @UsePipes(new ValidationPipe({ whitelist: true }))
-  async addToCart(
-    @Body() addToCartDto: AddToCartDto,
-  ): Promise<StandardResponse<Cart>> {
-    const cartItem = await this.productsService.addToCart(addToCartDto);
-    return new StandardResponse(cartItem);
-  }
-
-  @Get('cart')
-  @ApiOperation({ summary: 'Get a list of products in the cart' })
-  @ApiStandardList({
-    type: Cart,
-    description: 'Get a list of products in the cart',
-  })
-  @UsePipes(new ValidationPipe({ transform: true }))
-  async findCart(
-    @Query(new PaginationInfoPipe()) paginationInfo: PaginationInfo,
-  ): Promise<StandardList<Cart>> {
-    const cartItems = await this.productsService.findCart(paginationInfo);
-    return new StandardList(cartItems, cartItems.length, paginationInfo);
-  }
-
-  @Delete('cart/:id')
-  @ApiOperation({ summary: 'Remove a product from the cart' })
-  @ApiStandardResponse({
-    type: Boolean,
-    description: 'Remove a product from the cart',
-  })
-  async removeFromCart(
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ): Promise<StandardResponse<boolean>> {
-    await this.productsService.removeFromCart(id);
-    return new StandardResponse(true);
-  }
-
-  @Post(':id/comments')
+  @Post('comments')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Add a comment to a product' })
   @ApiStandardResponse({
     type: Comment,
@@ -154,10 +118,8 @@ export class ProductsController {
   })
   @UsePipes(new ValidationPipe({ whitelist: true }))
   async addComment(
-    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() createCommentDto: CreateCommentDto,
   ): Promise<StandardResponse<Comment>> {
-    createCommentDto.productId = id;
     const comment = await this.productsService.addComment(createCommentDto);
     return new StandardResponse(comment);
   }

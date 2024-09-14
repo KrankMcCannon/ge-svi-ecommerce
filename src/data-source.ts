@@ -7,8 +7,8 @@ export const AppDataSource = new DataSource({
   username: 'postgres',
   password: 'password',
   database: 'ge-svi-ecommerce',
-  entities: ['dist/**/*.entity.js'],
-  migrations: ['dist/migrations/*.js'],
+  entities: [__dirname + '/**/*.entity{.ts,.js}'],
+  migrations: [__dirname + '/migrations/*{.ts,.js}'],
   synchronize: false,
   logging: true,
 });

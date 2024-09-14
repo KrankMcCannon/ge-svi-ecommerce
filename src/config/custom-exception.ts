@@ -7,6 +7,7 @@ export class CustomException extends HttpException {
   errorLevel: ErrorLevel;
   errorDescription: string;
   data: any;
+  originalError?: Error;
 
   constructor(
     errorCode: number,
@@ -14,26 +15,36 @@ export class CustomException extends HttpException {
     errorDescription: string,
     status: number = HttpStatus.BAD_REQUEST,
     data?: any,
+    originalError?: Error,
   ) {
     super({ errorCode, errorLevel, errorDescription, data }, status);
     this.errorCode = errorCode;
     this.errorLevel = errorLevel;
     this.errorDescription = errorDescription;
     this.data = data;
+    this.originalError = originalError;
 
-    CustomLogger.error(`CustomException: ${errorDescription}`, data);
+    if (originalError && originalError.stack) {
+      this.stack = `${this.stack}\nCaused by: ${originalError.stack}`;
+    }
+
+    CustomLogger.error(
+      `CustomException: ${errorDescription}`,
+      originalError || data,
+    );
   }
 
   static fromErrorEnum(
     errorEnumValue: ErrorEnumValue,
-    data?: any,
+    options?: { data?: any; originalError?: Error },
   ): CustomException {
     return new CustomException(
       errorEnumValue.errorCode,
       errorEnumValue.errorLevel,
       errorEnumValue.errorDescription,
       errorEnumValue.errorStatus,
-      data,
+      options?.data,
+      options?.originalError,
     );
   }
 
@@ -48,6 +59,13 @@ export class CustomException extends HttpException {
     const errorCode = response?.statusCode || 9999;
     const errorLevel = ErrorLevel.ERROR;
 
-    return new CustomException(errorCode, errorLevel, errorDescription, status);
+    return new CustomException(
+      errorCode,
+      errorLevel,
+      errorDescription,
+      status,
+      undefined,
+      ex,
+    );
   }
 }

@@ -99,80 +99,118 @@ export const Errors = {
     'Product not found',
     HttpStatus.NOT_FOUND,
   ),
-  E_0010_PRODUCT_DELETE_CONSTRAINT: new ErrorEnumValue(
+  E_0010_INSUFFICIENT_STOCK: new ErrorEnumValue(
     10,
-    ErrorLevel.ERROR,
-    'Product cannot be deleted due to associated records',
-    HttpStatus.CONFLICT,
-  ),
-  E_0011_INSUFFICIENT_STOCK: new ErrorEnumValue(
-    11,
     ErrorLevel.ERROR,
     'Insufficient stock for the product',
     HttpStatus.CONFLICT,
   ),
-  E_0012_DUPLICATE_PRODUCT: new ErrorEnumValue(
-    12,
+  E_0011_DUPLICATE_PRODUCT: new ErrorEnumValue(
+    11,
     ErrorLevel.ERROR,
     'A product with this name already exists',
     HttpStatus.CONFLICT,
   ),
 
   // Cart Errors
-  E_0013_CART_ADD_ERROR: new ErrorEnumValue(
-    13,
+  E_0012_CART_ADD_ERROR: new ErrorEnumValue(
+    12,
     ErrorLevel.ERROR,
     'Error occurred while adding item to cart',
     HttpStatus.UNPROCESSABLE_ENTITY,
   ),
-  E_0014_CART_FETCH_ERROR: new ErrorEnumValue(
-    14,
+  E_0013_CART_FETCH_ERROR: new ErrorEnumValue(
+    13,
     ErrorLevel.ERROR,
     'Error occurred while fetching cart items',
     HttpStatus.INTERNAL_SERVER_ERROR,
   ),
-  E_0015_CART_REMOVE_ERROR: new ErrorEnumValue(
-    15,
+  E_0014_CART_REMOVE_ERROR: new ErrorEnumValue(
+    14,
     ErrorLevel.ERROR,
     'Error occurred while removing item from cart',
     HttpStatus.INTERNAL_SERVER_ERROR,
   ),
-  E_0016_CART_ITEM_NOT_FOUND: new ErrorEnumValue(
-    16,
+  E_0015_CART_ITEM_NOT_FOUND: new ErrorEnumValue(
+    15,
     ErrorLevel.ERROR,
     'Cart item not found',
     HttpStatus.NOT_FOUND,
   ),
-  E_0017_CART_EMPTY: new ErrorEnumValue(
-    17,
+  E_0016_CART_EMPTY: new ErrorEnumValue(
+    16,
     ErrorLevel.ERROR,
     'The cart is empty',
     HttpStatus.BAD_REQUEST,
   ),
 
   // Comment Errors
-  E_0018_COMMENT_CREATION_ERROR: new ErrorEnumValue(
-    18,
+  E_0017_COMMENT_CREATION_ERROR: new ErrorEnumValue(
+    17,
     ErrorLevel.ERROR,
     'Error occurred while creating comment',
     HttpStatus.UNPROCESSABLE_ENTITY,
   ),
-  E_0019_COMMENT_FETCH_ERROR: new ErrorEnumValue(
-    19,
+  E_0018_COMMENT_FETCH_ERROR: new ErrorEnumValue(
+    18,
     ErrorLevel.ERROR,
     'Error occurred while fetching comments',
     HttpStatus.INTERNAL_SERVER_ERROR,
   ),
-  E_0020_COMMENT_NOT_FOUND: new ErrorEnumValue(
-    20,
+  E_0019_COMMENT_NOT_FOUND: new ErrorEnumValue(
+    19,
     ErrorLevel.ERROR,
     'Comment not found',
     HttpStatus.NOT_FOUND,
   ),
-  E_0021_INVALID_COMMENT: new ErrorEnumValue(
-    21,
+  E_0020_INVALID_COMMENT: new ErrorEnumValue(
+    20,
     ErrorLevel.ERROR,
     'Comment text is too short',
+    HttpStatus.BAD_REQUEST,
+  ),
+  E_0021_COMMENT_DELETION_ERROR: new ErrorEnumValue(
+    21,
+    ErrorLevel.ERROR,
+    'Error occurred while deleting comment',
+    HttpStatus.INTERNAL_SERVER_ERROR,
+  ),
+
+  // User Errors
+  E_0022_USER_CREATION_ERROR: new ErrorEnumValue(
+    22,
+    ErrorLevel.ERROR,
+    'Error occurred while creating user',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+  ),
+  E_0023_USER_UPDATE_ERROR: new ErrorEnumValue(
+    23,
+    ErrorLevel.ERROR,
+    'Error occurred while updating user',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+  ),
+  E_0024_USER_REMOVE_ERROR: new ErrorEnumValue(
+    24,
+    ErrorLevel.ERROR,
+    'Error occurred while removing user',
+    HttpStatus.INTERNAL_SERVER_ERROR,
+  ),
+  E_0025_USER_NOT_FOUND: new ErrorEnumValue(
+    25,
+    ErrorLevel.ERROR,
+    'User not found',
+    HttpStatus.NOT_FOUND,
+  ),
+  E_0026_DUPLICATE_USER: new ErrorEnumValue(
+    26,
+    ErrorLevel.ERROR,
+    'A user with this email already exists',
+    HttpStatus.CONFLICT,
+  ),
+  E_0027_INVALID_USER: new ErrorEnumValue(
+    27,
+    ErrorLevel.ERROR,
+    'Invalid user data',
     HttpStatus.BAD_REQUEST,
   ),
 

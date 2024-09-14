@@ -35,6 +35,27 @@ export class EnvironmentVariables {
   }
 
   /**
+   * JWT secret key
+   * Default: 'my_super_secret_key'
+   * @returns {string} The secret key for JWT (JWT_SECRET)
+   */
+  static get JWT_SECRET(): string {
+    return __getStringWithDefault(
+      process.env.JWT_SECRET,
+      'my_super_secret_key',
+    );
+  }
+
+  /**
+   * JWT expiration time
+   * Default: '1d'
+   * @returns {string} The expiration time for JWT (JWT_EXPIRATION_TIME)
+   */
+  static get JWT_EXPIRATION_TIME(): string {
+    return __getStringWithDefault(process.env.JWT_EXPIRATION_TIME, '1d');
+  }
+
+  /**
    * PostgreSQL protocol
    * Default: 'postgres'
    * @returns {string} The database protocol (DATABASE_PROTOCOL)

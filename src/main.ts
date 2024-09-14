@@ -5,6 +5,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './config/http-exception.filter';
 
 async function bootstrap() {
   // Create the application
@@ -12,6 +13,9 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
   );
+
+  app.setGlobalPrefix('api/v1');
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   // Create the Swagger documentation
   const config = new DocumentBuilder()
