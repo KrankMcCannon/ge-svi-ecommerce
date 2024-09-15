@@ -6,8 +6,8 @@ import { CartsController } from './carts.controller';
 import { CartsService } from './carts.service';
 import { Cart } from './entities';
 import { CartItem } from './entities/cartItem.entity';
-import { CartItemRepository } from './repositories/cart-items.repository';
-import { CartRepository } from './repositories/carts.repository';
+import { CartItemsRepository } from './repositories/cart-items.repository';
+import { CartsRepository } from './repositories/carts.repository';
 
 @Module({
   imports: [
@@ -15,7 +15,7 @@ import { CartRepository } from './repositories/carts.repository';
     ProductsModule,
     TypeOrmModule.forFeature([Cart, CartItem]),
   ],
-  providers: [CartsService, CartRepository, CartItemRepository],
+  providers: [CartsService, CartsRepository, CartItemsRepository],
   controllers: [CartsController],
 })
 export class CartsModule {}

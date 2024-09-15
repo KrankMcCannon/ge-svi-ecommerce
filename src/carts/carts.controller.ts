@@ -12,30 +12,30 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { PaginationInfoPipe } from 'src/config/pagination-info.pipe';
+import { Roles } from 'src/config/roles.decorator';
 import { ApiStandardList, StandardList } from 'src/config/standard-list.dto';
 import {
   ApiStandardResponse,
   StandardResponse,
 } from 'src/config/standard-response.dto';
 import { JwtAuthGuard } from 'src/config/strategies/jwt-auth.guard';
+import { RolesGuard } from 'src/config/strategies/roles.guard';
 import { CartsService } from './carts.service';
 import { AddCartItemToCartDto } from './dtos';
 import { Cart } from './entities';
 import { CartItem } from './entities/cartItem.entity';
 
 @ApiTags('Carts')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('carts')
 export class CartsController {
   constructor(private readonly cartsService: CartsService) {}
 
   @Post('cart')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('user', 'admin')
   @ApiOperation({ summary: 'Add a product to the cart' })
   @ApiStandardResponse({
     type: Cart,
@@ -55,6 +55,8 @@ export class CartsController {
   }
 
   @Get('cart/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('user', 'admin')
   @ApiOperation({ summary: 'Get a list of products in the cart' })
   @ApiStandardList({
     type: Cart,
@@ -78,8 +80,8 @@ export class CartsController {
   }
 
   @Delete('cart/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('user', 'admin')
   @ApiOperation({ summary: 'Remove a product from the cart' })
   @ApiStandardResponse({
     type: Boolean,

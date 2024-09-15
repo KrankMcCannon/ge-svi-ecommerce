@@ -1,17 +1,28 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CartRepository } from './cart.repository';
-import { Cart } from '../../products/entities/cart.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { AddToCartDto } from '../dtos/add-cart-item-to-cart.dto';
-import { Product } from '../../products/entities/product.entity';
-import { PaginationInfo } from 'src/config/pagination-info.dto';
+import { AddCartItemToCartDto } from '../dtos';
+import { Cart } from '../entities';
+import { CartItem } from '../entities/cartItem.entity';
+import { CartItemsRepository } from './cart-items.repository';
+import { CartsRepository } from './carts.repository';
 
 describe('CartRepository', () => {
-  let repository: CartRepository;
+  let repository: CartsRepository;
   let ormRepository: jest.Mocked<Repository<Cart>>;
 
-  const mockProduct: Product = {
+  const mockUser = {
+    id: '1',
+    email: 'ex@mple.com',
+    password: 'password',
+    name: 'name',
+    role: 'user',
+    cart: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const mockProduct = {
     id: '1',
     name: 'Test Product',
     description: 'Test Description',
@@ -23,10 +34,10 @@ describe('CartRepository', () => {
     comments: [],
   };
 
-  const mockCartItem: Cart = {
+  const mockCartItem = {
     id: '1',
-    product: mockProduct,
-    quantity: 2,
+    user: null,
+    cartItems: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -70,15 +81,20 @@ describe('CartRepository', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        CartRepository,
+        CartsRepository,
         {
           provide: getRepositoryToken(Cart),
+          useValue: mockOrmRepository,
+        },
+        CartItemsRepository,
+        {
+          provide: getRepositoryToken(CartItem),
           useValue: mockOrmRepository,
         },
       ],
     }).compile();
 
-    repository = module.get<CartRepository>(CartRepository);
+    repository = module.get<CartsRepository>(CartsRepository);
     ormRepository = module.get<Repository<Cart>>(
       getRepositoryToken(Cart),
     ) as jest.Mocked<Repository<Cart>>;
@@ -90,18 +106,18 @@ describe('CartRepository', () => {
 
   describe('addToCart', () => {
     it('should add an item to the cart', async () => {
-      const addToCartDto: AddToCartDto = {
+      const AddCartItemToCartDto: AddCartItemToCartDto = {
         productId: '1',
         quantity: 2,
       };
 
       const result = await repository.addToCart(
-        addToCartDto,
+        mockUser.id,
+        AddCartItemToCartDto,
         mockProduct,
         mockEntityManager,
       );
 
-      console.log(result);
       expect(result).toEqual(mockCartItem);
     });
   });
@@ -110,23 +126,7 @@ describe('CartRepository', () => {
     it('should return a list of cart items', async () => {
       ormRepository.find.mockResolvedValue([mockCartItem]);
 
-      const cartId = '1';
-      const query = {};
-      const paginationInfo = new PaginationInfo({
-        pageNumber: 0,
-        pageSize: 10,
-        paginationEnabled: true,
-      });
-
-      const result = await repository.findCart(cartId, query, paginationInfo);
-
-      expect(result).toEqual([mockCartItem]);
-    });
-  });
-
-  describe('findOneById', () => {
-    it('should return a cart item by id', async () => {
-      const result = await repository.findOneById('1', mockEntityManager);
+      const result = await repository.findCart(mockUser.id, mockEntityManager);
 
       expect(result).toEqual(mockCartItem);
     });
@@ -134,7 +134,7 @@ describe('CartRepository', () => {
 
   describe('removeCartItem', () => {
     it('should remove a cart item', async () => {
-      const result = await repository.removeCartItem('1', mockEntityManager);
+      const result = await repository.deleteCart('1', mockEntityManager);
 
       expect(result).toBeUndefined();
     });

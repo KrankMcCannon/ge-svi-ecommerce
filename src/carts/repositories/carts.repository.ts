@@ -10,7 +10,7 @@ import { Cart } from '../entities';
 import { CartItem } from '../entities/cartItem.entity';
 
 @Injectable()
-export class CartRepository extends BaseRepository<Cart> {
+export class CartsRepository extends BaseRepository<Cart> {
   constructor(
     @InjectRepository(Cart)
     private readonly cartRepo: Repository<Cart>,
@@ -24,14 +24,14 @@ export class CartRepository extends BaseRepository<Cart> {
    * Adds a product to a user's cart or updates the quantity if it already exists.
    *
    * @param userId User's ID.
-   * @param addToCartDto DTO containing productId and quantity.
+   * @param addCartItemToCartDto DTO containing productId and quantity.
    * @param product The product being added.
    * @param manager Optional transaction manager.
    * @returns Updated cart item.
    */
   async addToCart(
     userId: string,
-    addToCartDto: AddCartItemToCartDto,
+    addCartItemToCartDto: AddCartItemToCartDto,
     product: Product,
     manager?: EntityManager,
   ): Promise<Cart> {
@@ -54,12 +54,12 @@ export class CartRepository extends BaseRepository<Cart> {
 
     // Update quantity or create new cart item
     if (cartItem) {
-      cartItem.quantity += addToCartDto.quantity;
+      cartItem.quantity += addCartItemToCartDto.quantity;
     } else {
       cartItem = cartItemRepo.create({
         cart,
         product,
-        quantity: addToCartDto.quantity,
+        quantity: addCartItemToCartDto.quantity,
       });
     }
 

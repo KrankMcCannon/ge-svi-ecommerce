@@ -6,17 +6,17 @@ import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { DataSource } from 'typeorm';
 import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
-import { CartRepository } from './repositories/carts.repository';
-import { Cart } from './entities/cart.entity';
-import { CartItemRepository } from './repositories/cart-items.repository';
-import { CartItem } from './entities/cartItem.entity';
 import { AddCartItemToCartDto } from './dtos';
+import { Cart } from './entities/cart.entity';
+import { CartItem } from './entities/cartItem.entity';
+import { CartItemsRepository } from './repositories/cart-items.repository';
+import { CartsRepository } from './repositories/carts.repository';
 
 @Injectable()
 export class CartsService {
   constructor(
-    private readonly cartsRepository: CartRepository,
-    private readonly cartItemRepository: CartItemRepository,
+    private readonly cartsRepository: CartsRepository,
+    private readonly cartItemRepository: CartItemsRepository,
     private readonly usersService: UsersService,
     private readonly productsService: ProductsService,
     private readonly dataSource: DataSource,
@@ -86,14 +86,13 @@ export class CartsService {
   async findCartItems(
     userId: string,
     pagination: PaginationInfo,
-    sort: string,
-    filter: any,
+    sort?: string,
+    filter?: any,
   ): Promise<CartItem[]> {
-    return await this.cartItemRepository.findCartItems(
-      userId,
-      { sort, ...filter },
-      pagination,
-    );
+    return await this.cartItemRepository.findCartItems(userId, pagination, {
+      sort,
+      ...filter,
+    });
   }
 
   /**

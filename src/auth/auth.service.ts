@@ -40,10 +40,12 @@ export class AuthService {
    * @param user User data.
    * @returns Object containing the access token.
    */
-  async login(user: User): Promise<{ accessToken: string }> {
+  async login(
+    user: Omit<User, 'setPassword' | 'validatePassword' | 'salt'>,
+  ): Promise<{ access_token: string }> {
     const payload = { sub: user.id, email: user.email, role: user.role };
     return {
-      accessToken: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(payload),
     };
   }
 

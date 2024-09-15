@@ -8,7 +8,7 @@ import { EntityManager, Repository } from 'typeorm';
 import { CartItem } from '../entities/cartItem.entity';
 
 @Injectable()
-export class CartItemRepository extends BaseRepository<CartItem> {
+export class CartItemsRepository extends BaseRepository<CartItem> {
   constructor(
     @InjectRepository(CartItem)
     private readonly cartItemRepo: Repository<CartItem>,
@@ -25,8 +25,8 @@ export class CartItemRepository extends BaseRepository<CartItem> {
    */
   async findCartItems(
     userId: string,
-    query: any,
     pagination: PaginationInfo,
+    query?: any,
   ): Promise<CartItem[]> {
     const qb = this.cartItemRepo.createQueryBuilder('cartItem');
     qb.innerJoinAndSelect('cartItem.product', 'product');
@@ -34,7 +34,7 @@ export class CartItemRepository extends BaseRepository<CartItem> {
     qb.where('cart.user.id = :userId', { userId });
 
     this.applyFilters(qb, query);
-    this.applySorting(qb, query);
+    this.applySorting(qb, query.sort);
     this.applyPagination(qb, pagination);
     return await qb.getMany();
   }

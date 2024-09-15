@@ -1,5 +1,6 @@
 import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Public } from 'src/config/public.decorator';
 import {
   ApiStandardResponse,
   StandardResponse,
@@ -13,8 +14,9 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @UseGuards(LocalAuthGuard)
   @Post('login')
+  @UseGuards(LocalAuthGuard)
+  @Public()
   @ApiOperation({ summary: 'User login' })
   @ApiStandardResponse({
     description: 'User logged in successfully',
@@ -22,13 +24,14 @@ export class AuthController {
   })
   async login(
     @Request() req,
-  ): Promise<StandardResponse<{ accessToken: string }>> {
+  ): Promise<StandardResponse<{ access_token: string }>> {
     const token = await this.authService.login(req.user);
     return new StandardResponse(token);
   }
 
-  @UseGuards(LocalAuthGuard)
   @Post('register')
+  @UseGuards(LocalAuthGuard)
+  @Public()
   @ApiOperation({ summary: 'User registration' })
   @ApiStandardResponse({
     description: 'User registered successfully',
