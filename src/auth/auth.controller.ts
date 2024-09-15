@@ -1,6 +1,5 @@
 import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Public } from 'src/config/public.decorator';
 import {
   ApiStandardResponse,
   StandardResponse,
@@ -14,7 +13,6 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Public()
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @ApiOperation({ summary: 'User login' })
@@ -29,7 +27,7 @@ export class AuthController {
     return new StandardResponse(token);
   }
 
-  @Public()
+  @UseGuards(LocalAuthGuard)
   @Post('register')
   @ApiOperation({ summary: 'User registration' })
   @ApiStandardResponse({

@@ -4,37 +4,39 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { CartsModule } from './carts/carts.module';
+import { EnvironmentVariables } from './config/environment-variables';
 import { JwtAuthGuard } from './config/strategies/jwt-auth.guard';
 import { TestDataSource } from './data-source-test';
 import { ProductsModule } from './products/products.module';
 import { UsersModule } from './users/users.module';
-import { CartsModule } from './carts/carts.module';
 
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
       useFactory: async () => {
-        if (process.env.NODE_ENV === 'test') {
+        const isTestEnv = process.env.NODE_ENV === 'test';
+        if (isTestEnv) {
           if (!TestDataSource.isInitialized) {
             await TestDataSource.initialize();
           }
           return {
             ...TestDataSource.options,
           };
-        } else {
-          return {
-            type: 'postgres',
-            host: 'localhost',
-            port: 5432,
-            username: 'postgres',
-            password: 'password',
-            database: 'ge-svi-ecommerce',
-            entities: [__dirname + '/**/*.entity.{js,ts}'],
-            migrations: [__dirname + '/migrations/*.{js,ts}'],
-            synchronize: false,
-            logging: true,
-          };
         }
+
+        return {
+          type: 'postgres',
+          host: EnvironmentVariables.DATABASE_HOST,
+          port: EnvironmentVariables.DATABASE_PORT,
+          username: EnvironmentVariables.DATABASE_USERNAME,
+          password: EnvironmentVariables.DATABASE_PASSWORD,
+          database: EnvironmentVariables.DATABASE_NAME,
+          entities: [__dirname + '/**/*.entity.{js,ts}'],
+          migrations: [__dirname + '/migrations/*.{js,ts}'],
+          synchronize: false,
+          logging: true,
+        };
       },
     }),
     CartsModule,

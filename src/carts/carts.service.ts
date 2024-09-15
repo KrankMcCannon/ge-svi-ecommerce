@@ -6,7 +6,7 @@ import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { DataSource } from 'typeorm';
 import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
-import { CartRepository } from './repositories/cart.repository';
+import { CartRepository } from './repositories/carts.repository';
 import { Cart } from './entities/cart.entity';
 import { CartItemRepository } from './repositories/cart-items.repository';
 import { CartItem } from './entities/cartItem.entity';

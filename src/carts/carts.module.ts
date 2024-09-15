@@ -7,7 +7,7 @@ import { CartsService } from './carts.service';
 import { Cart } from './entities';
 import { CartItem } from './entities/cartItem.entity';
 import { CartItemRepository } from './repositories/cart-items.repository';
-import { CartRepository } from './repositories/cart.repository';
+import { CartRepository } from './repositories/carts.repository';
 
 @Module({
   imports: [

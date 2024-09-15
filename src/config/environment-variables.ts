@@ -36,14 +36,10 @@ export class EnvironmentVariables {
 
   /**
    * JWT secret key
-   * Default: 'my_super_secret_key'
    * @returns {string} The secret key for JWT (JWT_SECRET)
    */
   static get JWT_SECRET(): string {
-    return __getStringWithDefault(
-      process.env.JWT_SECRET,
-      'my_super_secret_key',
-    );
+    return process.env.JWT_SECRET!;
   }
 
   /**
@@ -84,20 +80,43 @@ export class EnvironmentVariables {
 
   /**
    * PostgreSQL database name
-   * Default: 'test'
+   * Default: 'ge-svi-ecommerce'
    * @returns {string} The name of the database (DATABASE_NAME)
    */
   static get DATABASE_NAME(): string {
-    return __getStringWithDefault(process.env.DATABASE_NAME, 'test');
+    return __getStringWithDefault(
+      process.env.DATABASE_NAME,
+      'ge-svi-ecommerce',
+    );
+  }
+
+  /**
+   * PostgreSQL database username
+   * Default: 'postgres'
+   * @returns {string} The database username (DATABASE_USERNAME)
+   */
+  static get DATABASE_USERNAME(): string {
+    return __getStringWithDefault(process.env.DATABASE_USERNAME, 'postgres');
+  }
+
+  /**
+   * PostgreSQL database password
+   * @returns {string} The database password (DATABASE_PASSWORD)
+   */
+  static get DATABASE_PASSWORD(): string {
+    return process.env.DATABASE_PASSWORD!;
   }
 
   /**
    * Title for Swagger documentation
-   * Default: 'E-commerce API'
+   * Default: 'GE SVI Ecommerce API'
    * @returns {string} The title for Swagger documentation (SWAGGER_TITLE)
    */
   static get SWAGGER_TITLE(): string {
-    return process.env.SWAGGER_TITLE || 'GE SVI Ecommerce API';
+    return __getStringWithDefault(
+      process.env.SWAGGER_TITLE,
+      'GE SVI Ecommerce API',
+    );
   }
 
   /**
@@ -106,8 +125,9 @@ export class EnvironmentVariables {
    * @returns {string} The description for Swagger documentation (SWAGGER_DESCRIPTION)
    */
   static get SWAGGER_DESCRIPTION(): string {
-    return (
-      process.env.SWAGGER_DESCRIPTION || 'API documentation for E-commerce'
+    return __getStringWithDefault(
+      process.env.SWAGGER_DESCRIPTION,
+      'API documentation for E-commerce',
     );
   }
 
@@ -117,7 +137,7 @@ export class EnvironmentVariables {
    * @returns {string} The version for Swagger documentation (SWAGGER_APP_VERSION)
    */
   static get SWAGGER_APP_VERSION(): string {
-    return process.env.SWAGGER_APP_VERSION || '1.0.0';
+    return __getStringWithDefault(process.env.SWAGGER_APP_VERSION, '1.0.0');
   }
 
   /**
