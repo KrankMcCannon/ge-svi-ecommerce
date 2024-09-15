@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CommentRepository } from './comment.repository';
+import { CommentRepository } from './comments.repository';
 import { Comment } from '../entities/comment.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';

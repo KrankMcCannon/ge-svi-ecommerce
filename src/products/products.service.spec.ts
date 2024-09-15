@@ -12,7 +12,7 @@ import {
 import { Cart, Comment, Product } from './entities';
 import { ProductsService } from './products.service';
 import { CartRepository } from '../carts/repositories/cart.repository';
-import { CommentRepository } from './repositories/comment.repository';
+import { CommentRepository } from './repositories/comments.repository';
 import { ProductsRepository } from './repositories/products.repository';
 
 describe('ProductsService', () => {

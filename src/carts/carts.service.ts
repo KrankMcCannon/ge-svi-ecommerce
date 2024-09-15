@@ -8,7 +8,7 @@ import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { CartRepository } from './repositories/cart.repository';
 import { Cart } from './entities/cart.entity';
-import { CartItemRepository } from './repositories/cart-item.repository';
+import { CartItemRepository } from './repositories/cart-items.repository';
 import { CartItem } from './entities/cartItem.entity';
 import { AddCartItemToCartDto } from './dtos';
 

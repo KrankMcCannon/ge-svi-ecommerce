@@ -6,7 +6,7 @@ import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { DataSource, EntityManager } from 'typeorm';
 import { CreateCommentDto, CreateProductDto, UpdateProductDto } from './dtos';
 import { Comment, Product } from './entities';
-import { CommentRepository } from './repositories/comment.repository';
+import { CommentRepository } from './repositories/comments.repository';
 import { ProductsRepository } from './repositories/products.repository';
 
 @Injectable()

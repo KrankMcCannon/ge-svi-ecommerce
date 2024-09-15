@@ -4,7 +4,7 @@ import { Comment } from './entities/comment.entity';
 import { Product } from './entities/product.entity';
 import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
-import { CommentRepository } from './repositories/comment.repository';
+import { CommentRepository } from './repositories/comments.repository';
 import { ProductsRepository } from './repositories/products.repository';
 
 @Module({
