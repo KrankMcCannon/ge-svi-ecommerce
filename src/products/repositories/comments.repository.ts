@@ -6,9 +6,10 @@ import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { EntityManager, Repository } from 'typeorm';
 import { BaseRepository } from '../../base.repository';
+import { CommentDTO } from '../dtos';
 import { CreateCommentDto } from '../dtos/create-comment.dto';
+import { ProductDTO } from '../dtos/product.dto';
 import { Comment } from '../entities/comment.entity';
-import { Product } from '../entities/product.entity';
 
 @Injectable()
 export class CommentRepository extends BaseRepository<Comment> {
@@ -28,11 +29,16 @@ export class CommentRepository extends BaseRepository<Comment> {
    */
   async addComment(
     createCommentDto: CreateCommentDto,
-    product: Product,
-  ): Promise<Comment> {
+    inputProduct: ProductDTO,
+  ): Promise<CommentDTO> {
     try {
-      const comment = this.commentRepo.create({ ...createCommentDto, product });
-      return await this.saveEntity(comment);
+      const product = ProductDTO.toEntity(inputProduct);
+      const createdComment = this.commentRepo.create({
+        ...createCommentDto,
+        product,
+      });
+      const comment = await this.saveEntity(createdComment);
+      return CommentDTO.fromEntity(comment);
     } catch (error) {
       CustomLogger.error('Error adding comment', error);
       throw CustomException.fromErrorEnum(
@@ -55,12 +61,13 @@ export class CommentRepository extends BaseRepository<Comment> {
   async findAllComments(
     productId: string,
     pagination: PaginationInfo,
-  ): Promise<Comment[]> {
+  ): Promise<CommentDTO[]> {
     const qb = this.commentRepo.createQueryBuilder('comment');
     qb.where('comment.productId = :productId', { productId });
     qb.orderBy('comment.createdAt', 'DESC');
     this.applyPagination(qb, pagination);
-    return await qb.getMany();
+    const comments = await qb.getMany();
+    return comments.map(CommentDTO.fromEntity);
   }
 
   /**

@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CartItem } from 'src/carts/entities/cartItem.entity';
 import {
   Column,
   CreateDateColumn,
@@ -8,7 +7,9 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { CartItem } from '../../carts/entities/cartItem.entity';
 import { Comment } from './comment.entity';
+import { OrderItem } from 'src/orders/entities/order-item.entity';
 
 @Entity('products')
 export class Product {
@@ -28,27 +29,41 @@ export class Product {
   @ApiProperty({
     description: 'Price of the product',
     type: 'number',
+    minimum: 0,
     format: 'decimal',
   })
   price: number;
 
-  @Column({ default: 0 })
-  @ApiProperty({ description: 'Stock quantity of the product', default: 0 })
+  @Column('int8')
+  @ApiProperty({
+    description: 'Stock quantity of the product',
+    minimum: 1,
+    format: 'number',
+  })
   stock: number;
 
   @OneToMany(() => CartItem, (cartItem) => cartItem.product)
   @ApiProperty({
     description: 'The cart items associated with the product',
-    type: () => [CartItem],
+    type: [CartItem],
   })
   cartItems: CartItem[];
 
   @OneToMany(() => Comment, (comment) => comment.product, { cascade: true })
   @ApiProperty({
     description: 'The comments associated with the product',
-    type: () => [Comment],
+    type: [Comment],
   })
   comments: Comment[];
+
+  @OneToMany(() => OrderItem, (orderItem) => orderItem.product, {
+    cascade: true,
+  })
+  @ApiProperty({
+    description: 'The order items associated with the product',
+    type: [OrderItem],
+  })
+  orderItems: OrderItem[];
 
   @CreateDateColumn()
   @ApiProperty({

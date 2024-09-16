@@ -1,35 +1,38 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ProductsRepository } from './products.repository';
-import { Product } from '../entities/product.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
-import { CreateProductDto, UpdateProductDto } from '../dtos';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
+import { EntityManager, Repository } from 'typeorm';
+import { CreateProductDto, ProductDTO, UpdateProductDto } from '../dtos';
+import { Product } from '../entities/product.entity';
+import { ProductsRepository } from './products.repository';
 
 describe('ProductsRepository', () => {
   let repository: ProductsRepository;
   let ormRepository: jest.Mocked<Repository<Product>>;
 
-  const mockProduct: Product = {
+  const mockProduct: ProductDTO = {
     id: '1',
     name: 'Test Product',
     description: 'Test Description',
     price: 100,
     stock: 10,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    comments: [],
-    cartItems: [],
+  };
+
+  const updateProductDto: UpdateProductDto = {
+    name: 'Updated Product',
+    description: 'Updated Description',
+    price: 150,
+    stock: 20,
   };
 
   const mockOrmRepository = {
-    create: jest.fn(),
-    findOne: jest.fn(),
-    save: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
+    create: jest.fn().mockReturnValue(mockProduct),
+    findOne: jest.fn().mockResolvedValue(mockProduct),
+    save: jest.fn().mockResolvedValue(mockProduct),
+    update: jest.fn().mockResolvedValue(updateProductDto),
+    delete: jest.fn().mockResolvedValue({ affected: 1 }),
     createQueryBuilder: jest.fn(() => ({
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
@@ -37,6 +40,10 @@ describe('ProductsRepository', () => {
       take: jest.fn().mockReturnThis(),
       getMany: jest.fn().mockResolvedValue([mockProduct]),
     })),
+    metadata: {
+      target: 'Cart',
+      primaryColumns: [{ propertyName: 'id' }],
+    },
   };
 
   const mockEntityManager = {
@@ -44,7 +51,11 @@ describe('ProductsRepository', () => {
       findOne: jest.fn().mockResolvedValue(mockProduct),
       save: jest.fn().mockResolvedValue(mockProduct),
       delete: jest.fn().mockResolvedValue({ affected: 1 }),
-      update: jest.fn().mockResolvedValue(mockProduct),
+      update: jest.fn().mockResolvedValue(updateProductDto),
+      metadata: {
+        target: 'Cart',
+        primaryColumns: [{ propertyName: 'id' }],
+      },
       createQueryBuilder: jest.fn(() => ({
         leftJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -72,13 +83,41 @@ describe('ProductsRepository', () => {
     ormRepository = module.get<Repository<Product>>(
       getRepositoryToken(Product),
     ) as jest.Mocked<Repository<Product>>;
+
+    jest
+      .spyOn(ProductDTO, 'fromEntity')
+      .mockImplementation((entity: Product) => {
+        return {
+          id: entity.id,
+          name: entity.name,
+          description: entity.description,
+          price: entity.price,
+          stock: entity.stock,
+        } as ProductDTO;
+      });
+
+    jest
+      .spyOn(ProductDTO, 'toEntity')
+      .mockImplementation((product: ProductDTO) => {
+        return {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          stock: product.stock,
+        } as Product;
+      });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
     expect(repository).toBeDefined();
   });
 
-  describe('createProduct', () => {
+  describe('Create Product', () => {
     it('should create and return a product', async () => {
       const createProductDto: CreateProductDto = {
         name: 'Test Product',
@@ -87,12 +126,9 @@ describe('ProductsRepository', () => {
         stock: 10,
       };
 
-      ormRepository.create.mockReturnValue(mockProduct);
-      ormRepository.save.mockResolvedValue(mockProduct);
-
       const result = await repository.createProduct(createProductDto);
 
-      expect(result).toEqual(mockProduct);
+      expect(result).toEqual(expect.objectContaining(mockProduct));
     });
 
     it('should throw an error if save fails', async () => {
@@ -111,7 +147,7 @@ describe('ProductsRepository', () => {
     });
   });
 
-  describe('findAll', () => {
+  describe('Find All Products', () => {
     it('should return an array of products using EntityManager', async () => {
       const query = { name: 'Test' };
       const paginationInfo = new PaginationInfo({
@@ -122,7 +158,9 @@ describe('ProductsRepository', () => {
 
       const result = await repository.findAll(query, paginationInfo);
 
-      expect(result).toEqual([mockProduct]);
+      expect(result).toEqual(
+        expect.arrayContaining([expect.objectContaining(mockProduct)]),
+      );
     });
 
     it('should throw an error if the query fails', async () => {
@@ -142,7 +180,7 @@ describe('ProductsRepository', () => {
     });
   });
 
-  describe('findOneById', () => {
+  describe('Find Product By ID', () => {
     it('should return a product if found', async () => {
       (
         mockEntityManager.getRepository(Product).findOne as jest.Mock
@@ -150,7 +188,7 @@ describe('ProductsRepository', () => {
 
       const result = await repository.findOneById('1', mockEntityManager);
 
-      expect(result).toEqual(mockProduct);
+      expect(result).toEqual(expect.objectContaining(mockProduct));
     });
 
     it('should throw an error if not found', async () => {
@@ -166,13 +204,11 @@ describe('ProductsRepository', () => {
     });
   });
 
-  describe('findByName', () => {
+  describe('Find Product By Name', () => {
     it('should return a product if found by name', async () => {
-      ormRepository.findOne.mockResolvedValue(mockProduct);
-
       const result = await repository.findByName('Test Product');
 
-      expect(result).toEqual(mockProduct);
+      expect(result).toEqual(expect.objectContaining(mockProduct));
     });
 
     it('should return null if no product is found by name', async () => {
@@ -184,18 +220,11 @@ describe('ProductsRepository', () => {
     });
   });
 
-  describe('updateProduct', () => {
+  describe('Update Product', () => {
     it('should update and return a product', async () => {
       (
         mockEntityManager.getRepository(Product).findOne as jest.Mock
-      ).mockResolvedValue(mockProduct);
-
-      const updateProductDto: UpdateProductDto = {
-        name: 'Updated Product',
-        description: 'Updated Description',
-        price: 150,
-        stock: 20,
-      };
+      ).mockResolvedValue(updateProductDto);
 
       const result = await repository.updateProduct(
         '1',
@@ -203,7 +232,7 @@ describe('ProductsRepository', () => {
         mockEntityManager,
       );
 
-      expect(result).toEqual(mockProduct);
+      expect(result).toEqual(expect.objectContaining(updateProductDto));
     });
 
     it('should throw an error if the update fails', async () => {
@@ -224,7 +253,7 @@ describe('ProductsRepository', () => {
     });
   });
 
-  describe('removeProduct', () => {
+  describe('Delete Product', () => {
     it('should remove a product', async () => {
       (
         mockEntityManager.getRepository(Product).findOne as jest.Mock
@@ -258,11 +287,14 @@ describe('ProductsRepository', () => {
         andWhere: jest.fn().mockReturnThis(),
         getOne: jest.fn().mockResolvedValue(mockProduct),
       });
+      (
+        mockEntityManager.getRepository(Product).delete as jest.Mock
+      ).mockRejectedValueOnce(new Error('Delete error'));
 
       await expect(
         repository.removeProduct('1', mockEntityManager),
       ).rejects.toThrow(
-        CustomException.fromErrorEnum(Errors.E_0010_PRODUCT_DELETE_CONSTRAINT),
+        CustomException.fromErrorEnum(Errors.E_0008_PRODUCT_REMOVE_ERROR),
       );
     });
 
@@ -288,16 +320,14 @@ describe('ProductsRepository', () => {
     });
   });
 
-  describe('saveProduct', () => {
+  describe('Save Product', () => {
     it('should save and return the product', async () => {
-      ormRepository.save.mockResolvedValue(mockProduct);
-
       const result = await repository.saveProduct(
         mockProduct,
         mockEntityManager,
       );
 
-      expect(result).toEqual(mockProduct);
+      expect(result).toEqual(expect.objectContaining(mockProduct));
     });
 
     it('should throw an error if save fails', async () => {

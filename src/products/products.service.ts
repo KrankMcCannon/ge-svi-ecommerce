@@ -5,7 +5,8 @@ import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { DataSource, EntityManager } from 'typeorm';
 import { CreateCommentDto, CreateProductDto, UpdateProductDto } from './dtos';
-import { Comment, Product } from './entities';
+import { CommentDTO } from './dtos/comment.dto';
+import { ProductDTO } from './dtos/product.dto';
 import { CommentRepository } from './repositories/comments.repository';
 import { ProductsRepository } from './repositories/products.repository';
 
@@ -17,7 +18,7 @@ export class ProductsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async createProduct(createProductDto: CreateProductDto): Promise<Product> {
+  async createProduct(createProductDto: CreateProductDto): Promise<ProductDTO> {
     const existingProduct = await this.productsRepo.findByName(
       createProductDto.name,
     );
@@ -33,11 +34,14 @@ export class ProductsService {
     pagination: PaginationInfo,
     sort: string,
     filter: any,
-  ): Promise<Product[]> {
+  ): Promise<ProductDTO[]> {
     return await this.productsRepo.findAll({ sort, ...filter }, pagination);
   }
 
-  async findProductById(id: string, manager?: EntityManager): Promise<Product> {
+  async findProductById(
+    id: string,
+    manager?: EntityManager,
+  ): Promise<ProductDTO> {
     if (!id) {
       throw CustomException.fromErrorEnum(Errors.E_0004_VALIDATION_KO, {
         data: { id },
@@ -49,7 +53,7 @@ export class ProductsService {
   async updateProduct(
     id: string,
     updateProductDto: UpdateProductDto,
-  ): Promise<Product> {
+  ): Promise<ProductDTO> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -102,13 +106,13 @@ export class ProductsService {
   }
 
   async saveProduct(
-    product: Product,
+    inputProduct: ProductDTO,
     manager?: EntityManager,
-  ): Promise<Product> {
-    return await this.productsRepo.saveProduct(product, manager);
+  ): Promise<ProductDTO> {
+    return await this.productsRepo.saveProduct(inputProduct, manager);
   }
 
-  async addComment(createCommentDto: CreateCommentDto): Promise<Comment> {
+  async addComment(createCommentDto: CreateCommentDto): Promise<CommentDTO> {
     const product = await this.findProductById(createCommentDto.productId);
     return await this.commentRepo.addComment(createCommentDto, product);
   }
@@ -116,7 +120,7 @@ export class ProductsService {
   async findAllComments(
     productId: string,
     paginationInfo: PaginationInfo,
-  ): Promise<Comment[]> {
+  ): Promise<CommentDTO[]> {
     await this.findProductById(productId);
     return await this.commentRepo.findAllComments(productId, paginationInfo);
   }
