@@ -1,52 +1,48 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CartsController } from './carts.controller';
-import { CartsService } from './carts.service';
-import { AddCartItemToCartDto } from './dtos';
-import { StandardResponse } from 'src/config/standard-response.dto';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { StandardList } from 'src/config/standard-list.dto';
+import { StandardResponse } from 'src/config/standard-response.dto';
+import { ProductDTO } from 'src/products/dtos/product.dto';
+import { UserDTO } from 'src/users/dtos/user.dto';
+import { CartsController } from './carts.controller';
+import { CartsService } from './carts.service';
+import { AddCartItemToCartDto, CartDTO, CartItemDTO } from './dtos';
 
 describe('CartsController', () => {
   let controller: CartsController;
 
-  const mockUser = {
+  const mockUser: UserDTO = {
     id: '1',
     email: 'ex@mple.com',
-    password: 'password',
     name: 'name',
     role: 'user',
     cart: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    orders: [],
   };
 
-  const mockProduct = {
+  const mockProduct: ProductDTO = {
     id: '1',
     name: 'Test Product',
     description: 'Test Description',
     price: 100,
     stock: 10,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+  };
+
+  const mockCart: CartDTO = {
+    id: '1',
+    userId: mockUser.id,
     cartItems: [],
-    comments: [],
   };
 
-  const mockCartItem = {
+  const mockCartItem: CartItemDTO = {
     id: '1',
-    product: mockProduct,
     quantity: 2,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    product: mockProduct,
+    cartId: mockCart.id,
   };
 
-  const mockCart = {
-    id: '1',
-    cartItems: [mockCartItem],
-    user: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  mockUser.cart = mockCart;
+  mockCart.cartItems.push(mockCartItem);
 
   const mockCartsService = {
     addProductToCart: jest.fn().mockResolvedValue(mockCartItem),
@@ -74,7 +70,7 @@ describe('CartsController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('addToCart', () => {
+  describe('Add Cart Item to Cart', () => {
     it('should return a cart', async () => {
       const addProductToCartDto: AddCartItemToCartDto = {
         productId: mockProduct.id,
@@ -86,7 +82,7 @@ describe('CartsController', () => {
     });
   });
 
-  describe('findCartItems', () => {
+  describe('Find Cart Items from Cart', () => {
     it('should return a list of cart items', async () => {
       const req = { user: mockUser };
       const pagination = new PaginationInfo({
@@ -98,7 +94,7 @@ describe('CartsController', () => {
     });
   });
 
-  describe('removeFromCart', () => {
+  describe('Remove Cart Item from Cart', () => {
     it('should return a cart item', async () => {
       const req = { user: mockUser };
       const body = {

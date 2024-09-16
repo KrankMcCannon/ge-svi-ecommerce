@@ -2,6 +2,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { CustomException } from 'src/config/custom-exception';
+import { UserDTO } from 'src/users/dtos/user.dto';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 
@@ -11,19 +12,17 @@ describe('AuthService', () => {
   let service: AuthService;
   let jwtService: JwtService;
 
-  const user = {
+  const mockUser: UserDTO = {
     id: '1',
     email: 'ex@mple.com',
-    password: 'password',
     name: 'name',
     role: 'user',
     cart: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    orders: [],
   };
 
   const mockUsersService = {
-    findByEmail: jest.fn().mockResolvedValue(user),
+    findByEmail: jest.fn().mockResolvedValue(mockUser),
     validatePassword: jest.fn().mockResolvedValue(true),
   };
 
@@ -62,7 +61,7 @@ describe('AuthService', () => {
     });
 
     it('should throw CustomException if password is invalid', async () => {
-      mockUsersService.findByEmail.mockResolvedValue(user);
+      mockUsersService.findByEmail.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(
@@ -73,12 +72,12 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should return a JWT token', async () => {
-      const result = await service.login(user);
+      const result = await service.login(mockUser);
       expect(result).toEqual({ access_token: 'token' });
       expect(jwtService.sign).toHaveBeenCalledWith({
-        email: user.email,
-        role: user.role,
-        sub: user.id,
+        email: mockUser.email,
+        role: mockUser.role,
+        sub: mockUser.id,
       });
     });
   });

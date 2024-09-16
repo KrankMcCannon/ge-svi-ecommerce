@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { UserDTO } from 'src/users/dtos';
 import { UsersService } from 'src/users/users.service';
-import { User } from '../../users/entities/user.entity';
 import { CustomException } from '../custom-exception';
 import { EnvironmentVariables } from '../environment-variables';
 import { Errors } from '../errors';
@@ -17,7 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any): Promise<User> {
+  async validate(payload: any): Promise<UserDTO> {
     const user = await this.usersService.findById(payload.sub);
     if (!user) {
       throw CustomException.fromErrorEnum(Errors.E_0025_USER_NOT_FOUND, {

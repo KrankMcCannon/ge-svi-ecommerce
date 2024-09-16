@@ -1,16 +1,12 @@
-// src/carts/entities/cart.entity.ts
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  OneToOne,
-  OneToMany,
-  JoinColumn,
+  Column,
   CreateDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-
-import { User } from '../../users/entities/user.entity';
 import { CartItem } from './cartItem.entity';
 
 @Entity('carts')
@@ -19,19 +15,12 @@ export class Cart {
   @ApiProperty({ description: 'Unique identifier for the cart' })
   id: string;
 
-  @OneToOne(() => User, (user) => user.cart, { onDelete: 'CASCADE' })
-  @JoinColumn()
+  @Column('uuid')
   @ApiProperty({ description: 'The user who owns this cart' })
-  user: User;
+  userId: string;
 
-  @OneToMany(() => CartItem, (cartItem) => cartItem.cart, {
-    cascade: true,
-    eager: true,
-  })
-  @ApiProperty({
-    description: 'List of cart items',
-    type: () => [CartItem],
-  })
+  @OneToMany(() => CartItem, (cartItem) => cartItem.cartId, { cascade: true })
+  @ApiProperty({ description: 'List of cart items', type: [CartItem] })
   cartItems: CartItem[];
 
   @CreateDateColumn()

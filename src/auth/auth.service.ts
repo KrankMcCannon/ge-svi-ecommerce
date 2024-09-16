@@ -3,9 +3,10 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
-import { CreateUserDto } from '../users/dtos/create-user.dto';
-import { User } from '../users/entities/user.entity';
+import { UserDTO } from 'src/users/dtos/user.dto';
 import { UsersService } from '../users/users.service';
+import { UserWithPasswordDTO } from 'src/users/dtos/user-password.dto';
+import { CreateUserDto } from 'src/users/dtos';
 
 @Injectable()
 export class AuthService {
@@ -28,7 +29,12 @@ export class AuthService {
         data: { email },
       });
     }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    const userPassword = UserWithPasswordDTO.fromUserDTO(user);
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      userPassword.password,
+    );
     if (!isPasswordValid) {
       throw CustomException.fromErrorEnum(Errors.E_0027_INVALID_USER);
     }
@@ -40,9 +46,7 @@ export class AuthService {
    * @param user User data.
    * @returns Object containing the access token.
    */
-  async login(
-    user: Omit<User, 'setPassword' | 'validatePassword' | 'salt'>,
-  ): Promise<{ access_token: string }> {
+  async login(user: UserDTO): Promise<{ access_token: string }> {
     const payload = { sub: user.id, email: user.email, role: user.role };
     return {
       access_token: this.jwtService.sign(payload),
@@ -56,9 +60,7 @@ export class AuthService {
    * @returns Created user data without password.
    * @throws CustomException if the user already exists.
    */
-  async register(
-    createUserDto: CreateUserDto,
-  ): Promise<Omit<User, 'password'>> {
+  async register(createUserDto: CreateUserDto): Promise<UserDTO> {
     const existingUser = await this.usersService.findByEmail(
       createUserDto.email,
     );
@@ -67,8 +69,6 @@ export class AuthService {
         data: { email: createUserDto.email },
       });
     }
-    const user = await this.usersService.create(createUserDto);
-    delete user.password;
-    return user;
+    return await this.usersService.create(createUserDto);
   }
 }

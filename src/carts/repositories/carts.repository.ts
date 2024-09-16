@@ -3,19 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BaseRepository } from 'src/base.repository';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
-import { Product } from 'src/products/entities';
 import { EntityManager, Repository } from 'typeorm';
-import { AddCartItemToCartDto } from '../dtos';
+import { CartDTO } from '../dtos/cart.dto';
 import { Cart } from '../entities';
-import { CartItem } from '../entities/cartItem.entity';
+import { CartItemsRepository } from './cart-items.repository';
+import { ProductDTO } from 'src/products/dtos';
 
 @Injectable()
 export class CartsRepository extends BaseRepository<Cart> {
   constructor(
     @InjectRepository(Cart)
     private readonly cartRepo: Repository<Cart>,
-    @InjectRepository(CartItem)
-    private readonly cartItemRepo: Repository<CartItem>,
+    private readonly cartItemRepo: CartItemsRepository,
   ) {
     super(cartRepo);
   }
@@ -24,47 +23,41 @@ export class CartsRepository extends BaseRepository<Cart> {
    * Adds a product to a user's cart or updates the quantity if it already exists.
    *
    * @param userId User's ID.
-   * @param addCartItemToCartDto DTO containing productId and quantity.
-   * @param product The product being added.
+   * @param productId The product ID.
+   * @param quantity The quantity of the product being added.
    * @param manager Optional transaction manager.
    * @returns Updated cart item.
    */
   async addToCart(
     userId: string,
-    addCartItemToCartDto: AddCartItemToCartDto,
-    product: Product,
+    product: ProductDTO,
+    quantity: number,
     manager?: EntityManager,
-  ): Promise<Cart> {
+  ): Promise<CartDTO> {
     const cartRepo = manager ? manager.getRepository(Cart) : this.cartRepo;
-    const cartItemRepo = manager
-      ? manager.getRepository(CartItem)
-      : this.cartItemRepo;
 
-    // Find or create the user's cart
-    let cart = await cartRepo.findOne({ where: { user: { id: userId } } });
+    let cart = await cartRepo.findOne({ where: { userId } });
+
     if (!cart) {
-      cart = cartRepo.create({ user: { id: userId } });
+      cart = cartRepo.create({ userId });
       await cartRepo.save(cart);
     }
 
-    // Check if the product is already in the cart
-    let cartItem = await cartItemRepo.findOne({
-      where: { cart: { id: cart.id }, product: { id: product.id } },
-    });
+    let cartItem = await this.cartItemRepo.findCartItemByCartIdAndProductId(
+      cart.id,
+      product.id,
+      manager,
+    );
 
-    // Update quantity or create new cart item
     if (cartItem) {
-      cartItem.quantity += addCartItemToCartDto.quantity;
+      cartItem.quantity += quantity;
     } else {
-      cartItem = cartItemRepo.create({
-        cart,
-        product,
-        quantity: addCartItemToCartDto.quantity,
-      });
+      cartItem = await this.cartItemRepo.saveCartItem(cartItem, manager);
     }
 
-    await cartItemRepo.save(cartItem);
-    return cart;
+    await cartRepo.save(cart);
+
+    return CartDTO.fromEntity(cart);
   }
 
   /**
@@ -74,8 +67,12 @@ export class CartsRepository extends BaseRepository<Cart> {
    * @param manager Optional transaction manager.
    * @returns The user's cart.
    */
-  async findCart(userId: string, manager?: EntityManager): Promise<Cart> {
-    return await this.findEntityById(userId, manager);
+  async findCart(
+    userId: string,
+    manager?: EntityManager,
+  ): Promise<CartDTO | null> {
+    const cart = await this.findEntityById(userId, manager);
+    return cart ? CartDTO.fromEntity(cart) : null;
   }
 
   /**
@@ -88,10 +85,30 @@ export class CartsRepository extends BaseRepository<Cart> {
    */
   async deleteCart(cartId: string, manager?: EntityManager): Promise<void> {
     const cartRepo = manager ? manager.getRepository(Cart) : this.cartRepo;
+
     try {
       const cart = await this.findEntityById(cartId, manager);
-      await this.cartItemRepo.delete({ cart });
+      for await (const cartItem of cart.cartItems) {
+        await this.cartItemRepo.removeCartItem(cartItem.id, manager);
+      }
       await cartRepo.delete(cartId);
+    } catch (error) {
+      throw CustomException.fromErrorEnum(Errors.E_0014_CART_REMOVE_ERROR, {
+        data: { id: cartId },
+        originalError: error,
+      });
+    }
+  }
+
+  async clearCart(cartId: string, manager?: EntityManager): Promise<void> {
+    const cartRepo = manager ? manager.getRepository(Cart) : this.cartRepo;
+
+    try {
+      const cart = await this.findEntityById(cartId, manager);
+      for await (const cartItem of cart.cartItems) {
+        await this.cartItemRepo.removeCartItem(cartItem.id, manager);
+      }
+      await cartRepo.save(cart);
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0014_CART_REMOVE_ERROR, {
         data: { id: cartId },

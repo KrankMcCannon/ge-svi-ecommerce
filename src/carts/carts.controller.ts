@@ -24,9 +24,7 @@ import {
 import { JwtAuthGuard } from 'src/config/strategies/jwt-auth.guard';
 import { RolesGuard } from 'src/config/strategies/roles.guard';
 import { CartsService } from './carts.service';
-import { AddCartItemToCartDto } from './dtos';
-import { Cart } from './entities';
-import { CartItem } from './entities/cartItem.entity';
+import { AddCartItemToCartDto, CartDTO, CartItemDTO } from './dtos';
 
 @ApiTags('Carts')
 @Controller('carts')
@@ -38,20 +36,17 @@ export class CartsController {
   @Roles('user', 'admin')
   @ApiOperation({ summary: 'Add a product to the cart' })
   @ApiStandardResponse({
-    type: Cart,
+    type: CartDTO,
     description: 'Add a product to the cart',
   })
   @UsePipes(new ValidationPipe({ whitelist: true }))
   async addToCart(
     @Body() addToCartDto: AddCartItemToCartDto,
     @Request() req: any,
-  ): Promise<StandardResponse<Cart>> {
+  ): Promise<StandardResponse<CartDTO>> {
     const userId = req.user.id;
-    const cartItem = await this.cartsService.addProductToCart(
-      userId,
-      addToCartDto,
-    );
-    return new StandardResponse(cartItem);
+    const cart = await this.cartsService.addProductToCart(userId, addToCartDto);
+    return new StandardResponse(cart);
   }
 
   @Get('cart/:id')
@@ -59,7 +54,7 @@ export class CartsController {
   @Roles('user', 'admin')
   @ApiOperation({ summary: 'Get a list of products in the cart' })
   @ApiStandardList({
-    type: Cart,
+    type: CartItemDTO,
     description: 'Get a list of products in the cart',
   })
   @UsePipes(new ValidationPipe({ transform: true }))
@@ -68,7 +63,7 @@ export class CartsController {
     @Query(new PaginationInfoPipe()) paginationInfo: PaginationInfo,
     @Query('sort') sort?: string,
     @Query() filter?: any,
-  ): Promise<StandardList<CartItem>> {
+  ): Promise<StandardList<CartItemDTO>> {
     const userId = req.user.id;
     const cartItems = await this.cartsService.findCartItems(
       userId,

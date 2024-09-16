@@ -1,13 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CustomException } from 'src/config/custom-exception';
+import { PaginationInfo } from 'src/config/pagination-info.dto';
+import { ProductDTO } from 'src/products/dtos/product.dto';
 import { ProductsService } from 'src/products/products.service';
+import { UserDTO } from 'src/users/dtos/user.dto';
 import { UsersService } from 'src/users/users.service';
 import { DataSource, EntityManager, QueryRunner } from 'typeorm';
 import { CartsService } from './carts.service';
-import { AddCartItemToCartDto } from './dtos';
+import { AddCartItemToCartDto, CartItemDTO } from './dtos';
+import { CartDTO } from './dtos/cart.dto';
 import { CartItemsRepository } from './repositories/cart-items.repository';
 import { CartsRepository } from './repositories/carts.repository';
-import { PaginationInfo } from 'src/config/pagination-info.dto';
 
 describe('CartsService', () => {
   let service: CartsService;
@@ -15,86 +18,38 @@ describe('CartsService', () => {
   let queryRunner: jest.Mocked<QueryRunner>;
   let entityManager: jest.Mocked<EntityManager>;
 
-  const mockUser = {
+  const mockUser: UserDTO = {
     id: '1',
     email: 'ex@mple.com',
-    password: 'password',
     name: 'name',
     role: 'user',
+    orders: [],
     cart: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
   };
 
-  const mockProduct = {
+  const mockProduct: ProductDTO = {
     id: '1',
     name: 'Test Product',
     description: 'Test Description',
     price: 100,
     stock: 10,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    comments: [],
-    cartItems: [
-      {
-        id: '1',
-        product: {
-          id: '1',
-          name: 'Test Product',
-          description: 'Test Description',
-          price: 100,
-          stock: 10,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          comments: [],
-        },
-        quantity: 2,
-        cart: {
-          id: '1',
-          cartItems: [
-            {
-              id: '1',
-              product: {
-                id: '1',
-                name: 'Test Product',
-                description: 'Test Description',
-                price: 100,
-                stock: 10,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                comments: [],
-              },
-              quantity: 2,
-            },
-          ],
-          user: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      },
-    ],
   };
 
-  const mockCart = {
+  const mockCart: CartDTO = {
     id: '1',
-    cartItems: [
-      {
-        id: '1',
-        product: mockProduct,
-        quantity: 2,
-      },
-    ],
-    user: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    cartItems: [],
+    userId: mockUser.id,
   };
 
-  const mockCartItem = {
+  const mockCartItem: CartItemDTO = {
     id: '1',
     product: mockProduct,
     quantity: 2,
-    cart: mockCart,
+    cartId: mockCart.id,
   };
+
+  mockUser.cart = mockCart;
+  mockCart.cartItems.push(mockCartItem);
 
   const mockUserService = {
     findById: jest.fn().mockResolvedValue(mockUser),
@@ -156,7 +111,7 @@ describe('CartsService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('addProductToCart', () => {
+  describe('Add Product To Cart', () => {
     afterEach(() => {
       jest.clearAllMocks();
     });
@@ -180,8 +135,8 @@ describe('CartsService', () => {
       );
       expect(cartsRepository.addToCart).toHaveBeenCalledWith(
         mockUser.id,
-        dto,
         mockProduct,
+        dto.quantity,
         entityManager,
       );
       expect(queryRunner.commitTransaction).toHaveBeenCalled();

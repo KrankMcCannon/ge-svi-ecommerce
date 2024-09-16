@@ -4,8 +4,7 @@ import { ProductsModule } from 'src/products/products.module';
 import { UsersModule } from 'src/users/users.module';
 import { CartsController } from './carts.controller';
 import { CartsService } from './carts.service';
-import { Cart } from './entities';
-import { CartItem } from './entities/cartItem.entity';
+import { Cart, CartItem } from './entities';
 import { CartItemsRepository } from './repositories/cart-items.repository';
 import { CartsRepository } from './repositories/carts.repository';
 

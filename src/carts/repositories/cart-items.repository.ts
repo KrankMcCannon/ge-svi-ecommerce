@@ -6,6 +6,7 @@ import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { EntityManager, Repository } from 'typeorm';
 import { CartItem } from '../entities/cartItem.entity';
+import { CartItemDTO } from '../dtos/cart-item.dto';
 
 @Injectable()
 export class CartItemsRepository extends BaseRepository<CartItem> {
@@ -27,7 +28,7 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
     userId: string,
     pagination: PaginationInfo,
     query?: any,
-  ): Promise<CartItem[]> {
+  ): Promise<CartItemDTO[]> {
     const qb = this.cartItemRepo.createQueryBuilder('cartItem');
     qb.innerJoinAndSelect('cartItem.product', 'product');
     qb.innerJoin('cartItem.cart', 'cart');
@@ -36,7 +37,8 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
     this.applyFilters(qb, query);
     this.applySorting(qb, query.sort);
     this.applyPagination(qb, pagination);
-    return await qb.getMany();
+    const cartItems = await qb.getMany();
+    return cartItems.map(CartItemDTO.fromEntity);
   }
 
   /**
@@ -50,8 +52,21 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
   async findCartItemById(
     cartItemId: string,
     manager?: EntityManager,
-  ): Promise<CartItem> {
-    return await this.findEntityById(cartItemId, manager);
+  ): Promise<CartItemDTO | null> {
+    const cartItem = await this.findEntityById(cartItemId, manager);
+    return cartItem ? CartItemDTO.fromEntity(cartItem) : null;
+  }
+
+  async findCartItemByCartIdAndProductId(
+    cartId: string,
+    productId: string,
+    manager?: EntityManager,
+  ): Promise<CartItemDTO | null> {
+    const repo = manager ? manager.getRepository(CartItem) : this.repo;
+    const cartItem = await repo.findOne({
+      where: { cartId, product: { id: productId } },
+    });
+    return cartItem ? CartItemDTO.fromEntity(cartItem) : null;
   }
 
   /**
@@ -80,16 +95,18 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
   /**
    * Saves a cart item.
    *
-   * @param cartItem Cart item to save.
+   * @param inputCartItem Cart item to save.
    * @returns The saved cart item.
    */
   async saveCartItem(
-    cartItem: CartItem,
+    inputCartItem: CartItemDTO,
     manager?: EntityManager,
-  ): Promise<CartItem> {
+  ): Promise<CartItemDTO> {
     const repo = manager ? manager.getRepository(CartItem) : this.repo;
+    const cartItem = CartItemDTO.toEntity(inputCartItem);
     try {
-      return await repo.save(cartItem);
+      const savedCartItem = await repo.save(cartItem);
+      return CartItemDTO.fromEntity(savedCartItem);
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0012_CART_ADD_ERROR, {
         data: { cartItem },

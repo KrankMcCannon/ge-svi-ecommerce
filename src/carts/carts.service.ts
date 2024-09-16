@@ -7,8 +7,8 @@ import { DataSource } from 'typeorm';
 import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { AddCartItemToCartDto } from './dtos';
-import { Cart } from './entities/cart.entity';
-import { CartItem } from './entities/cartItem.entity';
+import { CartItemDTO } from './dtos/cart-item.dto';
+import { CartDTO } from './dtos/cart.dto';
 import { CartItemsRepository } from './repositories/cart-items.repository';
 import { CartsRepository } from './repositories/carts.repository';
 
@@ -33,7 +33,7 @@ export class CartsService {
   async addProductToCart(
     userId: string,
     addProductToCartDto: AddCartItemToCartDto,
-  ): Promise<Cart> {
+  ): Promise<CartDTO> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -55,8 +55,8 @@ export class CartsService {
 
       const cart = await this.cartsRepository.addToCart(
         userId,
-        addProductToCartDto,
         product,
+        addProductToCartDto.quantity,
         queryRunner.manager,
       );
 
@@ -78,6 +78,16 @@ export class CartsService {
   }
 
   /**
+   * Retrieves the user's cart.
+   *
+   * @param userId User's ID.
+   * @returns User's cart.
+   */
+  async findCart(userId: string): Promise<CartDTO> {
+    return await this.cartsRepository.findCart(userId);
+  }
+
+  /**
    * Retrieves all cart items for a user.
    *
    * @param userId User's ID.
@@ -88,7 +98,7 @@ export class CartsService {
     pagination: PaginationInfo,
     sort?: string,
     filter?: any,
-  ): Promise<CartItem[]> {
+  ): Promise<CartItemDTO[]> {
     return await this.cartItemRepository.findCartItems(userId, pagination, {
       sort,
       ...filter,
@@ -119,18 +129,17 @@ export class CartsService {
         cartItemId,
         queryRunner.manager,
       );
-      if (cartItem.cart.id !== cart.id) {
+      if (cartItem.cartId !== cart.id) {
         throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
           data: { id: cartItemId },
         });
       }
+
       const product = await this.productsService.findProductById(
         productId,
         queryRunner.manager,
       );
-      if (
-        product.cartItems.filter((item) => item.id === cartItemId).length === 0
-      ) {
+      if (!product || product.id !== cartItem.product.id) {
         throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
           data: { id: cartItemId },
         });
@@ -163,5 +172,9 @@ export class CartsService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async clearCart(cartId: string): Promise<void> {
+    await this.cartsRepository.clearCart(cartId);
   }
 }

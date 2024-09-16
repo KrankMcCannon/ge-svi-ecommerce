@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { StandardResponse } from 'src/config/standard-response.dto';
+import { UserDTO } from 'src/users/dtos/user.dto';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { StandardResponse } from 'src/config/standard-response.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -12,15 +13,13 @@ describe('AuthController', () => {
     login: jest.fn().mockResolvedValue({ access_token: 'token' }),
   };
 
-  const user = {
+  const mockUser: UserDTO = {
     id: '1',
     email: 'ex@mple.com',
-    password: 'password',
     name: 'name',
     role: 'user',
     cart: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    orders: [],
   };
 
   beforeEach(async () => {
@@ -43,10 +42,10 @@ describe('AuthController', () => {
 
   describe('login', () => {
     it('should return a JWT token', async () => {
-      const req = { user };
+      const req = { user: mockUser };
       const result = await controller.login(req);
       expect(result).toEqual(new StandardResponse({ access_token: 'token' }));
-      expect(authService.login).toHaveBeenCalledWith(user);
+      expect(authService.login).toHaveBeenCalledWith(mockUser);
     });
   });
 });
