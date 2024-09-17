@@ -8,6 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { OrderItem } from './order-item.entity';
+import { OrderStatus } from '../enum';
 
 @Entity('orders')
 export class Order {
@@ -19,17 +20,26 @@ export class Order {
   @ApiProperty({ description: 'User who placed the order' })
   userId: string;
 
+  @Column({
+    type: 'enum',
+    enum: OrderStatus,
+    default: OrderStatus.PENDING,
+  })
+  @ApiProperty({ description: 'Status of the order', enum: OrderStatus })
+  status: OrderStatus;
+
   @OneToMany(() => OrderItem, (orderItem) => orderItem.orderId, {
     cascade: true,
+    eager: true,
   })
   @ApiProperty({ description: 'List of order items' })
   orderItems: OrderItem[];
 
   @CreateDateColumn()
-  @ApiProperty({ description: 'The date the order was created' })
+  @ApiProperty({ description: 'Date the order was created' })
   createdAt: Date;
 
   @UpdateDateColumn()
-  @ApiProperty({ description: 'The date the order was last updated' })
+  @ApiProperty({ description: 'Date the order was last updated' })
   updatedAt: Date;
 }

@@ -64,7 +64,7 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
   ): Promise<CartItemDTO | null> {
     const repo = manager ? manager.getRepository(CartItem) : this.repo;
     const cartItem = await repo.findOne({
-      where: { cartId, product: { id: productId } },
+      where: { cartId, productId },
     });
     return cartItem ? CartItemDTO.fromEntity(cartItem) : null;
   }

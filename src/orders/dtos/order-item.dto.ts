@@ -1,27 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { plainToClass } from 'class-transformer';
-import {
-  IsDecimal,
-  IsInt,
-  IsNotEmpty,
-  IsString,
-  IsUUID,
-} from 'class-validator';
+import { IsDecimal, IsInt, IsNotEmpty, IsUUID } from 'class-validator';
 import { OrderItem } from '../entities/order-item.entity';
 
 export class OrderItemDTO {
-  @ApiProperty({ description: 'The unique identifier for an order item' })
+  @ApiProperty({ description: 'Unique identifier for the order item' })
   @IsUUID()
   @IsNotEmpty()
   id: string;
 
-  @ApiProperty({ description: 'The quantity of the product in the order' })
+  @ApiProperty({ description: 'Quantity of the product in the order' })
   @IsInt()
   @IsNotEmpty()
   quantity: number;
 
   @ApiProperty({
-    description: 'The price of the product at the time of the order',
+    description: 'Price of the product at the time of the order',
     type: 'number',
     format: 'decimal',
   })
@@ -29,31 +22,33 @@ export class OrderItemDTO {
   @IsNotEmpty()
   price: number;
 
-  @ApiProperty({
-    description: 'The product associated with this order item',
-  })
-  @IsString()
+  @ApiProperty({ description: 'Product associated with this order item' })
+  @IsUUID()
+  @IsNotEmpty()
   productId: string;
 
-  @ApiProperty({
-    description: 'The order associated with this order item',
-  })
-  @IsString()
+  @ApiProperty({ description: 'Order associated with this order item' })
+  @IsUUID()
+  @IsNotEmpty()
   orderId: string;
 
   static fromEntity(orderItem: OrderItem): OrderItemDTO {
-    return plainToClass(OrderItemDTO, orderItem, {
-      excludeExtraneousValues: true,
-    });
+    const dto = new OrderItemDTO();
+    dto.id = orderItem.id;
+    dto.quantity = orderItem.quantity;
+    dto.price = orderItem.price;
+    dto.productId = orderItem.productId;
+    dto.orderId = orderItem.orderId;
+    return dto;
   }
 
-  static toEntity(orderItemDTO: OrderItemDTO): OrderItem {
+  static toEntity(dto: OrderItemDTO): OrderItem {
     const orderItem = new OrderItem();
-    orderItem.id = orderItemDTO.id;
-    orderItem.quantity = orderItemDTO.quantity;
-    orderItem.price = orderItemDTO.price;
-    orderItem.productId = orderItemDTO.productId;
-    orderItem.orderId = orderItemDTO.orderId;
+    orderItem.id = dto.id;
+    orderItem.quantity = dto.quantity;
+    orderItem.price = dto.price;
+    orderItem.productId = dto.productId;
+    orderItem.orderId = dto.orderId;
     return orderItem;
   }
 }

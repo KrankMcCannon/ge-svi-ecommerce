@@ -35,7 +35,7 @@ export class CommentRepository extends BaseRepository<Comment> {
       const product = ProductDTO.toEntity(inputProduct);
       const createdComment = this.commentRepo.create({
         ...createCommentDto,
-        product,
+        productId: product.id,
       });
       const comment = await this.saveEntity(createdComment);
       return CommentDTO.fromEntity(comment);

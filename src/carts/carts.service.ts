@@ -139,7 +139,7 @@ export class CartsService {
         productId,
         queryRunner.manager,
       );
-      if (!product || product.id !== cartItem.product.id) {
+      if (!product || product.id !== cartItem.productId) {
         throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
           data: { id: cartItemId },
         });
