@@ -4,7 +4,7 @@ import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
 import { DataSource, EntityManager } from 'typeorm';
 import { CreateUserDto, UpdateUserDto } from './dtos';
-import { User } from './entities/user.entity';
+import { UserDTO } from './dtos/user.dto';
 import { UserRepository } from './users.repository';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class UsersService {
    * @param createUserDto Data Transfer Object for creating a user.
    * @returns The created user.
    */
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto): Promise<UserDTO> {
     const userExists = await this.findByEmail(createUserDto.email);
     if (userExists) {
       throw CustomException.fromErrorEnum(Errors.E_0027_INVALID_USER, {
@@ -30,11 +30,10 @@ export class UsersService {
     const { password, ...userData } = createUserDto;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await this.usersRepo.createUser({
+    return await this.usersRepo.createUser({
       ...userData,
       password: hashedPassword,
     });
-    return user;
   }
 
   /**
@@ -44,7 +43,7 @@ export class UsersService {
    * @returns The found user
    * @throws CustomException if the user is not found.
    */
-  async findByEmail(email: string): Promise<User | undefined> {
+  async findByEmail(email: string): Promise<UserDTO | null> {
     return await this.usersRepo.findByEmail(email);
   }
 
@@ -55,7 +54,7 @@ export class UsersService {
    * @param manager Optional transaction manager.
    * @returns The found user.
    */
-  async findById(id: string, manager?: EntityManager): Promise<User> {
+  async findById(id: string, manager?: EntityManager): Promise<UserDTO | null> {
     return await this.usersRepo.findById(id, manager);
   }
 
@@ -66,12 +65,12 @@ export class UsersService {
    * @param updateUserDto Data Transfer Object for updating a user.
    * @returns The updated user.
    */
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserDTO> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      const user = await this.findById(id);
+      const user = await this.usersRepo.findById(id, queryRunner.manager);
       if (updateUserDto.password) {
         updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
       }

@@ -5,6 +5,7 @@ import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
 import { CreateUserDto, UpdateUserDto } from 'src/users/dtos';
 import { EntityManager, Repository } from 'typeorm';
+import { UserDTO } from './dtos/user.dto';
 import { User } from './entities';
 
 @Injectable()
@@ -22,9 +23,10 @@ export class UserRepository extends BaseRepository<User> {
    * @param email User's email.
    * @returns The found user or null.
    */
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(email: string): Promise<UserDTO | null> {
     try {
-      return await this.userRepo.findOne({ where: { email } });
+      const user = await this.userRepo.findOne({ where: { email } });
+      return user ? UserDTO.fromEntity(user) : null;
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0025_USER_NOT_FOUND, {
         data: { email },
@@ -39,8 +41,9 @@ export class UserRepository extends BaseRepository<User> {
    * @param id User's ID.
    * @returns The found user.
    */
-  async findById(id: string, manager?: EntityManager): Promise<User> {
-    return await this.findEntityById(id, manager);
+  async findById(id: string, manager?: EntityManager): Promise<UserDTO> {
+    const user = await this.findEntityById(id, manager);
+    return UserDTO.fromEntity(user);
   }
 
   /**
@@ -49,10 +52,11 @@ export class UserRepository extends BaseRepository<User> {
    * @param user User entity to create.
    * @returns The created user.
    */
-  async createUser(createUserDto: CreateUserDto): Promise<User> {
+  async createUser(createUserDto: CreateUserDto): Promise<UserDTO> {
     try {
-      const user = this.userRepo.create(createUserDto);
-      return await this.saveEntity(user);
+      const createdUser = this.userRepo.create(createUserDto);
+      const user = await this.saveEntity(createdUser);
+      return UserDTO.fromEntity(user);
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0022_USER_CREATION_ERROR, {
         data: { user: createUserDto },
@@ -68,14 +72,16 @@ export class UserRepository extends BaseRepository<User> {
    * @returns The updated user.
    */
   async updateUser(
-    user: User,
+    inputUser: UserDTO,
     updateUserDto: UpdateUserDto,
     manager?: EntityManager,
-  ): Promise<User> {
+  ): Promise<UserDTO> {
     const repo = manager ? manager.getRepository(User) : this.userRepo;
+    const user = UserDTO.toEntity(inputUser);
     try {
       await repo.update(user.id, updateUserDto);
-      return await this.findEntityById(user.id, manager);
+      const updatedUser = await this.findEntityById(user.id, manager);
+      return UserDTO.fromEntity(updatedUser);
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0023_USER_UPDATE_ERROR, {
         data: { user: updateUserDto },
@@ -113,10 +119,15 @@ export class UserRepository extends BaseRepository<User> {
    * @param user User entity to save.
    * @returns The saved user.
    */
-  async saveUser(user: User, manager?: EntityManager): Promise<User> {
+  async saveUser(
+    inputUser: UserDTO,
+    manager?: EntityManager,
+  ): Promise<UserDTO> {
     const repo = manager ? manager.getRepository(User) : this.repo;
+    const user = UserDTO.toEntity(inputUser);
     try {
-      return await repo.save(user);
+      const savedUser = await repo.save(user);
+      return UserDTO.fromEntity(savedUser);
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0022_USER_CREATION_ERROR, {
         data: { user },
