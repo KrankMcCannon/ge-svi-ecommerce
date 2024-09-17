@@ -1,13 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { CartItem } from './cartItem.entity';
+import { User } from 'src/users/entities';
 
 @Entity('carts')
 export class Cart {
@@ -15,12 +17,16 @@ export class Cart {
   @ApiProperty({ description: 'Unique identifier for the cart' })
   id: string;
 
-  @Column('uuid')
   @ApiProperty({ description: 'The user who owns this cart' })
-  userId: string;
+  @OneToOne(() => User, (user) => user.cart)
+  @JoinColumn()
+  user: User;
 
-  @OneToMany(() => CartItem, (cartItem) => cartItem.cartId, { cascade: true })
   @ApiProperty({ description: 'List of cart items', type: [CartItem] })
+  @OneToMany(() => CartItem, (cartItem) => cartItem.cart, {
+    cascade: ['insert', 'update'],
+    eager: true,
+  })
   cartItems: CartItem[];
 
   @CreateDateColumn()

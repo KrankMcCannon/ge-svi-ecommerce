@@ -3,7 +3,7 @@ import * as bcrypt from 'bcrypt';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
 import { DataSource, EntityManager } from 'typeorm';
-import { CreateUserDto, UpdateUserDto } from './dtos';
+import { CreateUserDto, UpdateUserDto, UserWithPasswordDTO } from './dtos';
 import { UserDTO } from './dtos/user.dto';
 import { UserRepository } from './users.repository';
 
@@ -27,6 +27,7 @@ export class UsersService {
         data: { email: createUserDto.email },
       });
     }
+
     const { password, ...userData } = createUserDto;
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -43,7 +44,7 @@ export class UsersService {
    * @returns The found user
    * @throws CustomException if the user is not found.
    */
-  async findByEmail(email: string): Promise<UserDTO | null> {
+  async findByEmail(email: string): Promise<UserWithPasswordDTO | null> {
     return await this.usersRepo.findByEmail(email);
   }
 
@@ -69,11 +70,13 @@ export class UsersService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
     try {
       const user = await this.usersRepo.findById(id, queryRunner.manager);
       if (updateUserDto.password) {
         updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
       }
+
       const updatedUser = await this.usersRepo.updateUser(
         user,
         updateUserDto,
@@ -104,6 +107,7 @@ export class UsersService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
     try {
       await this.findById(id, queryRunner.manager);
       await this.usersRepo.deleteUser(id, queryRunner.manager);

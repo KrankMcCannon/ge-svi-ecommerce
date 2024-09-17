@@ -10,6 +10,7 @@ import {
 import { Order } from '../entities/order.entity';
 import { OrderStatus } from '../enum';
 import { OrderItemDTO } from './order-item.dto';
+import { UserDTO } from 'src/users/dtos';
 
 export class OrderDTO {
   @ApiProperty({ description: 'Unique identifier for the order' })
@@ -17,15 +18,14 @@ export class OrderDTO {
   @IsNotEmpty()
   id: string;
 
-  @ApiProperty({ description: 'The user who placed the order' })
-  @IsUUID()
-  @IsNotEmpty()
-  userId: string;
-
   @ApiProperty({ description: 'Status of the order', enum: OrderStatus })
   @IsEnum(OrderStatus)
   @IsNotEmpty()
   status: OrderStatus;
+
+  @ApiProperty({ description: 'The user who placed the order' })
+  @Type(() => UserDTO)
+  user: UserDTO;
 
   @ApiProperty({
     description: 'List of order items',
@@ -37,16 +37,14 @@ export class OrderDTO {
   orderItems: OrderItemDTO[];
 
   static fromEntity(order: Order): OrderDTO {
-    return plainToClass(OrderDTO, order, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(OrderDTO, order);
   }
 
   static toEntity(dto: OrderDTO): Order {
     const order = new Order();
     order.id = dto.id;
-    order.userId = dto.userId;
     order.status = dto.status;
+    order.user = UserDTO.toEntity(dto.user);
     order.orderItems = dto.orderItems.map(OrderItemDTO.toEntity);
     return order;
   }

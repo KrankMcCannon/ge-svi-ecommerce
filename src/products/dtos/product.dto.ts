@@ -71,9 +71,7 @@ export class ProductDTO {
   orderItems: OrderItemDTO[];
 
   static fromEntity(product: Product): ProductDTO {
-    return plainToClass(ProductDTO, product, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(ProductDTO, product);
   }
 
   static toEntity(dto: ProductDTO): Product {

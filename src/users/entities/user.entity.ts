@@ -14,7 +14,6 @@ import { Cart } from '../../carts/entities/cart.entity';
 import { Order } from '../../orders/entities/order.entity';
 
 @Entity('users')
-@Unique(['email'])
 export class User {
   @ApiProperty({ description: 'Unique identifier for the user' })
   @PrimaryGeneratedColumn('uuid')
@@ -25,6 +24,7 @@ export class User {
   name: string;
 
   @ApiProperty({ description: 'Email address of the user' })
+  @Unique(['email'])
   @Column({ length: 255, unique: true })
   email: string;
 
@@ -36,11 +36,14 @@ export class User {
   @Column({ default: 'guest' })
   role: string;
 
+  @OneToOne(() => Cart, (cart) => cart.user, {
+    cascade: ['insert', 'update'],
+    eager: true,
+  })
   @ApiProperty({ description: "User's active cart" })
-  @OneToOne(() => Cart, (cart) => cart.userId, { cascade: true, eager: true })
   cart: Cart;
 
-  @OneToMany(() => Order, (order) => order.userId, { cascade: true })
+  @OneToMany(() => Order, (order) => order.user)
   @ApiProperty({ description: "User's past orders" })
   orders: Order[];
 

@@ -30,13 +30,14 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
     query?: any,
   ): Promise<CartItemDTO[]> {
     const qb = this.cartItemRepo.createQueryBuilder('cartItem');
-    qb.innerJoinAndSelect('cartItem.product', 'product');
-    qb.innerJoin('cartItem.cart', 'cart');
-    qb.where('cart.user.id = :userId', { userId });
+    qb.innerJoinAndSelect('cartItem.product', 'product')
+      .innerJoin('cartItem.cart', 'cart')
+      .where('cart.user.id = :userId', { userId });
 
     this.applyFilters(qb, query);
     this.applySorting(qb, query.sort);
     this.applyPagination(qb, pagination);
+
     const cartItems = await qb.getMany();
     return cartItems.map(CartItemDTO.fromEntity);
   }
@@ -64,7 +65,7 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
   ): Promise<CartItemDTO | null> {
     const repo = manager ? manager.getRepository(CartItem) : this.repo;
     const cartItem = await repo.findOne({
-      where: { cartId, productId },
+      where: { cart: { id: cartId }, product: { id: productId } },
     });
     return cartItem ? CartItemDTO.fromEntity(cartItem) : null;
   }

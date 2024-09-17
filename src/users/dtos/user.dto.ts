@@ -11,6 +11,7 @@ import {
 import { OrderDTO } from 'src/orders/dtos/order.dto';
 import { CartDTO } from '../../carts/dtos/cart.dto';
 import { User } from '../entities';
+import { UserWithPasswordDTO } from './user-password.dto';
 
 export class UserDTO {
   @ApiProperty({ description: 'Unique identifier for the user' })
@@ -41,10 +42,23 @@ export class UserDTO {
   @Type(() => OrderDTO)
   orders: OrderDTO[];
 
+  static fromPasswordDTO(dto: UserWithPasswordDTO): User {
+    const user = new User();
+    user.id = dto.id;
+    user.name = dto.name;
+    user.email = dto.email;
+    user.role = dto.role;
+    if (dto.cart) {
+      user.cart = CartDTO.toEntity(dto.cart);
+    }
+    if (dto.orders && dto.orders.length > 0) {
+      user.orders = dto.orders.map(OrderDTO.toEntity);
+    }
+    return user;
+  }
+
   static fromEntity(user: User): UserDTO {
-    return plainToClass(UserDTO, user, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(UserDTO, user);
   }
 
   static toEntity(dto: UserDTO): User {
@@ -53,8 +67,12 @@ export class UserDTO {
     user.name = dto.name;
     user.email = dto.email;
     user.role = dto.role;
-    user.cart = CartDTO.toEntity(dto.cart);
-    user.orders = dto.orders.map(OrderDTO.toEntity);
+    if (dto.cart) {
+      user.cart = CartDTO.toEntity(dto.cart);
+    }
+    if (dto.orders.length > 0) {
+      user.orders = dto.orders.map(OrderDTO.toEntity);
+    }
     return user;
   }
 }

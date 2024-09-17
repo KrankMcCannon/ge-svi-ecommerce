@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/config/public.decorator';
 import {
@@ -6,7 +6,7 @@ import {
   StandardResponse,
 } from 'src/config/standard-response.dto';
 import { LocalAuthGuard } from 'src/config/strategies/local-auth.guard';
-import { CreateUserDto } from 'src/users/dtos';
+import { CreateUserDto, UserDTO } from 'src/users/dtos';
 import { AuthService } from './auth.service';
 
 @ApiTags('Authentication')
@@ -23,14 +23,13 @@ export class AuthController {
     type: StandardResponse,
   })
   async login(
-    @Request() req,
+    @Body() loginDto: { email: string; password: string },
   ): Promise<StandardResponse<{ access_token: string }>> {
-    const token = await this.authService.login(req.user);
+    const token = await this.authService.login(loginDto);
     return new StandardResponse(token);
   }
 
   @Post('register')
-  @UseGuards(LocalAuthGuard)
   @Public()
   @ApiOperation({ summary: 'User registration' })
   @ApiStandardResponse({
@@ -39,7 +38,7 @@ export class AuthController {
   })
   async register(
     @Body() createUserDto: CreateUserDto,
-  ): Promise<StandardResponse<any>> {
+  ): Promise<StandardResponse<UserDTO>> {
     const user = await this.authService.register(createUserDto);
     return new StandardResponse(user);
   }

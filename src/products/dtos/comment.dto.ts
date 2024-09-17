@@ -1,19 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { plainToClass } from 'class-transformer';
+import { plainToClass, Type } from 'class-transformer';
 import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 import { Comment } from '../entities';
+import { ProductDTO } from './product.dto';
 
 export class CommentDTO {
   @ApiProperty({ description: 'The ID of the comment' })
   @IsUUID()
   @IsNotEmpty()
   id: string;
-
-  @ApiProperty({
-    description: 'The product ID of the comment',
-  })
-  @IsString()
-  productId: string;
 
   @ApiProperty({ description: 'The content of the comment', maxLength: 255 })
   @IsString()
@@ -25,18 +20,23 @@ export class CommentDTO {
   @IsNotEmpty()
   author: string;
 
+  @ApiProperty({
+    description: 'The product ID of the comment',
+    type: ProductDTO,
+  })
+  @Type(() => ProductDTO)
+  product: ProductDTO;
+
   static fromEntity(comment: Comment): CommentDTO {
-    return plainToClass(CommentDTO, comment, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(CommentDTO, comment);
   }
 
   static toEntity(commentDTO: CommentDTO): Comment {
     const comment = new Comment();
     comment.id = commentDTO.id;
-    comment.productId = commentDTO.productId;
     comment.content = commentDTO.content;
     comment.author = commentDTO.author;
+    comment.product = ProductDTO.toEntity(commentDTO.product);
     return comment;
   }
 }

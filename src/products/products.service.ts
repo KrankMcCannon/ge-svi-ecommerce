@@ -18,6 +18,12 @@ export class ProductsService {
     private readonly dataSource: DataSource,
   ) {}
 
+  /**
+   * Creates a new product.
+   *
+   * @param createProductDto - Data Transfer Object for creating a product.
+   * @returns The created product.
+   */
   async createProduct(createProductDto: CreateProductDto): Promise<ProductDTO> {
     const existingProduct = await this.productsRepo.findByName(
       createProductDto.name,
@@ -30,6 +36,14 @@ export class ProductsService {
     return await this.productsRepo.createProduct(createProductDto);
   }
 
+  /**
+   * Finds all products with optional filters, pagination, and sorting.
+   *
+   * @param pagination - Pagination information.
+   * @param sort - Sorting options.
+   * @param filter - Filters.
+   * @returns List of products.
+   */
   async findAllProducts(
     pagination: PaginationInfo,
     sort: string,
@@ -38,6 +52,13 @@ export class ProductsService {
     return await this.productsRepo.findAll({ sort, ...filter }, pagination);
   }
 
+  /**
+   * Finds a product by ID.
+   *
+   * @param id - Product ID.
+   * @param manager - Optional transaction manager.
+   * @returns The found product.
+   */
   async findProductById(
     id: string,
     manager?: EntityManager,
@@ -50,6 +71,13 @@ export class ProductsService {
     return await this.productsRepo.findOneById(id, manager);
   }
 
+  /**
+   * Updates a product.
+   *
+   * @param id - Product ID.
+   * @param updateProductDto - Data Transfer Object for updating a product.
+   * @returns The updated product.
+   */
   async updateProduct(
     id: string,
     updateProductDto: UpdateProductDto,
@@ -57,6 +85,7 @@ export class ProductsService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
     try {
       const updatedProduct = await this.productsRepo.updateProduct(
         id,
@@ -80,10 +109,16 @@ export class ProductsService {
     }
   }
 
+  /**
+   * Removes a product.
+   *
+   * @param id - Product ID.
+   */
   async removeProduct(id: string): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
     try {
       await this.productsRepo.removeProduct(id, queryRunner.manager);
       await queryRunner.commitTransaction();
@@ -105,6 +140,13 @@ export class ProductsService {
     }
   }
 
+  /**
+   * Saves a product.
+   *
+   * @param inputProduct - Product data.
+   * @param manager - Optional transaction manager.
+   * @returns The saved product.
+   */
   async saveProduct(
     inputProduct: ProductDTO,
     manager?: EntityManager,
@@ -112,11 +154,24 @@ export class ProductsService {
     return await this.productsRepo.saveProduct(inputProduct, manager);
   }
 
+  /**
+   * Adds a comment to a product.
+   *
+   * @param createCommentDto - Data Transfer Object for creating a comment.
+   * @returns The created comment.
+   */
   async addComment(createCommentDto: CreateCommentDto): Promise<CommentDTO> {
     const product = await this.findProductById(createCommentDto.productId);
     return await this.commentRepo.addComment(createCommentDto, product);
   }
 
+  /**
+   * Finds all comments for a product.
+   *
+   * @param productId - Product ID.
+   * @param paginationInfo - Pagination information.
+   * @returns List of comments.
+   */
   async findAllComments(
     productId: string,
     paginationInfo: PaginationInfo,

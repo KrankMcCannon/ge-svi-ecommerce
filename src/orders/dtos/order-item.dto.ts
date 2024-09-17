@@ -1,6 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsDecimal, IsInt, IsNotEmpty, IsUUID } from 'class-validator';
 import { OrderItem } from '../entities/order-item.entity';
+import { plainToClass, Type } from 'class-transformer';
+import { ProductDTO } from 'src/products/dtos';
+import { OrderDTO } from './order.dto';
 
 export class OrderItemDTO {
   @ApiProperty({ description: 'Unique identifier for the order item' })
@@ -22,24 +25,22 @@ export class OrderItemDTO {
   @IsNotEmpty()
   price: number;
 
-  @ApiProperty({ description: 'Product associated with this order item' })
-  @IsUUID()
-  @IsNotEmpty()
-  productId: string;
+  @ApiProperty({
+    description: 'Product associated with this order item',
+    type: ProductDTO,
+  })
+  @Type(() => ProductDTO)
+  product: ProductDTO;
 
-  @ApiProperty({ description: 'Order associated with this order item' })
-  @IsUUID()
-  @IsNotEmpty()
-  orderId: string;
+  @ApiProperty({
+    description: 'Order associated with this order item',
+    type: OrderDTO,
+  })
+  @Type(() => OrderDTO)
+  order: OrderDTO;
 
   static fromEntity(orderItem: OrderItem): OrderItemDTO {
-    const dto = new OrderItemDTO();
-    dto.id = orderItem.id;
-    dto.quantity = orderItem.quantity;
-    dto.price = orderItem.price;
-    dto.productId = orderItem.productId;
-    dto.orderId = orderItem.orderId;
-    return dto;
+    return plainToClass(OrderItemDTO, orderItem);
   }
 
   static toEntity(dto: OrderItemDTO): OrderItem {
@@ -47,8 +48,8 @@ export class OrderItemDTO {
     orderItem.id = dto.id;
     orderItem.quantity = dto.quantity;
     orderItem.price = dto.price;
-    orderItem.productId = dto.productId;
-    orderItem.orderId = dto.orderId;
+    orderItem.product = ProductDTO.toEntity(dto.product);
+    orderItem.order = OrderDTO.toEntity(dto.order);
     return orderItem;
   }
 }

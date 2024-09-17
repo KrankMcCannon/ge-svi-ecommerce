@@ -1,14 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { User } from 'src/users/entities';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { OrderItem } from './order-item.entity';
 import { OrderStatus } from '../enum';
+import { OrderItem } from './order-item.entity';
 
 @Entity('orders')
 export class Order {
@@ -16,9 +18,9 @@ export class Order {
   @ApiProperty({ description: 'Unique identifier for the order' })
   id: string;
 
-  @Column('uuid')
   @ApiProperty({ description: 'User who placed the order' })
-  userId: string;
+  @ManyToOne(() => User, (user) => user.orders, { eager: true })
+  user: User;
 
   @Column({
     type: 'enum',
@@ -28,11 +30,11 @@ export class Order {
   @ApiProperty({ description: 'Status of the order', enum: OrderStatus })
   status: OrderStatus;
 
-  @OneToMany(() => OrderItem, (orderItem) => orderItem.orderId, {
-    cascade: true,
+  @ApiProperty({ description: 'List of order items', type: [OrderItem] })
+  @OneToMany(() => OrderItem, (orderItem) => orderItem.order, {
+    cascade: ['insert', 'update'],
     eager: true,
   })
-  @ApiProperty({ description: 'List of order items' })
   orderItems: OrderItem[];
 
   @CreateDateColumn()

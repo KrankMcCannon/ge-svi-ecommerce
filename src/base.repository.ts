@@ -46,9 +46,7 @@ export class BaseRepository<Entity> {
         throw new Error('Composite primary keys are not supported.');
       }
       const primaryKey = primaryColumns[0].propertyName as keyof Entity;
-      const entity = await repo.findOne({
-        where: { [primaryKey]: id } as any,
-      });
+      const entity = await repo.findOne({ where: { [primaryKey]: id } as any });
       if (!entity) {
         throw CustomException.fromErrorEnum(Errors.E_0002_NOT_FOUND_ERROR, {
           data: { id },
@@ -95,7 +93,15 @@ export class BaseRepository<Entity> {
     if (sort) {
       const order = sort.startsWith('-') ? 'DESC' : 'ASC';
       const field = sort.startsWith('-') ? sort.substring(1) : sort;
-      qb.orderBy(`${alias}${field}`, order);
+
+      const columnExists = this.repo.metadata.columns.some(
+        (col) => col.propertyName === field,
+      );
+      if (columnExists) {
+        qb.orderBy(`${alias}${field}`, order);
+      } else {
+        throw new Error(`Sorting field "${field}" does not exist.`);
+      }
     }
   }
 
@@ -106,18 +112,12 @@ export class BaseRepository<Entity> {
    * @param query Query object.
    */
   protected applyFilters(qb: SelectQueryBuilder<Entity>, query: any) {
-    if (query.name) {
-      qb.andWhere('product.name ILIKE :name', { name: `%${query.name}%` });
-    }
-    if (query.minPrice && query.maxPrice) {
-      qb.andWhere('product.price BETWEEN :min AND :max', {
-        min: query.minPrice,
-        max: query.maxPrice,
-      });
-    } else if (query.minPrice) {
-      qb.andWhere('product.price >= :min', { min: query.minPrice });
-    } else if (query.maxPrice) {
-      qb.andWhere('product.price <= :max', { max: query.maxPrice });
-    }
+    Object.keys(query).forEach((key) => {
+      if (this.repo.metadata.columns.some((col) => col.propertyName === key)) {
+        qb.andWhere(`${this.repo.metadata.targetName}.${key} = :${key}`, {
+          [key]: query[key],
+        });
+      }
+    });
   }
 }

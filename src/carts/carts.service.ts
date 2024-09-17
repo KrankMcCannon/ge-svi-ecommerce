@@ -6,8 +6,7 @@ import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { DataSource } from 'typeorm';
 import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
-import { AddCartItemToCartDto } from './dtos';
-import { CartItemDTO } from './dtos/cart-item.dto';
+import { AddCartItemToCartDto, CartItemDTO } from './dtos';
 import { CartDTO } from './dtos/cart.dto';
 import { CartItemsRepository } from './repositories/cart-items.repository';
 import { CartsRepository } from './repositories/carts.repository';
@@ -37,6 +36,7 @@ export class CartsService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
     try {
       await this.usersService.findById(userId);
       const product = await this.productsService.findProductById(
@@ -50,15 +50,33 @@ export class CartsService {
         });
       }
 
-      product.stock -= addProductToCartDto.quantity;
-      await this.productsService.saveProduct(product, queryRunner.manager);
-
-      const cart = await this.cartsRepository.addToCart(
+      const cart = await this.cartsRepository.findCart(
         userId,
-        product,
-        addProductToCartDto.quantity,
         queryRunner.manager,
       );
+
+      let cartItem =
+        await this.cartItemRepository.findCartItemByCartIdAndProductId(
+          cart.id,
+          addProductToCartDto.productId,
+          queryRunner.manager,
+        );
+
+      if (cartItem) {
+        cartItem.quantity += addProductToCartDto.quantity;
+      } else {
+        cartItem = new CartItemDTO();
+        cartItem.product = product;
+        cartItem.quantity = addProductToCartDto.quantity;
+        cartItem.cart = cart;
+        await this.cartItemRepository.saveCartItem(
+          cartItem,
+          queryRunner.manager,
+        );
+      }
+
+      product.stock -= addProductToCartDto.quantity;
+      await this.productsService.saveProduct(product, queryRunner.manager);
 
       await queryRunner.commitTransaction();
       return cart;
@@ -66,10 +84,6 @@ export class CartsService {
       await queryRunner.rollbackTransaction();
       if (!(error instanceof CustomException)) {
         CustomLogger.error('Error adding product to cart', error);
-        throw CustomException.fromErrorEnum(Errors.E_0012_CART_ADD_ERROR, {
-          data: { productId: addProductToCartDto.productId },
-          originalError: error,
-        });
       }
       throw error;
     } finally {
@@ -120,6 +134,7 @@ export class CartsService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
     try {
       const cart = await this.cartsRepository.findCart(
         userId,
@@ -129,33 +144,31 @@ export class CartsService {
         cartItemId,
         queryRunner.manager,
       );
-      if (cartItem.cartId !== cart.id) {
-        throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
-          data: { id: cartItemId },
-        });
-      }
 
-      const product = await this.productsService.findProductById(
-        productId,
-        queryRunner.manager,
-      );
-      if (!product || product.id !== cartItem.productId) {
+      if (cartItem.cart.id !== cart.id || cartItem.product.id !== productId) {
         throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
           data: { id: cartItemId },
         });
       }
 
       if (cartItem.quantity === 1) {
-        product.stock += cartItem.quantity;
         await this.cartItemRepository.removeCartItem(
           cartItemId,
           queryRunner.manager,
         );
+      } else {
+        cartItem.quantity -= 1;
+        await this.cartItemRepository.saveCartItem(
+          cartItem,
+          queryRunner.manager,
+        );
       }
 
-      cartItem.quantity -= 1;
+      const product = await this.productsService.findProductById(
+        productId,
+        queryRunner.manager,
+      );
       product.stock += 1;
-      await this.cartItemRepository.saveCartItem(cartItem, queryRunner.manager);
       await this.productsService.saveProduct(product, queryRunner.manager);
 
       await queryRunner.commitTransaction();
@@ -163,10 +176,6 @@ export class CartsService {
       await queryRunner.rollbackTransaction();
       if (!(error instanceof CustomException)) {
         CustomLogger.error('Error removing cart item', error);
-        throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
-          data: { id: userId },
-          originalError: error,
-        });
       }
       throw error;
     } finally {

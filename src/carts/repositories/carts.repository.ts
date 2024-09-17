@@ -36,10 +36,10 @@ export class CartsRepository extends BaseRepository<Cart> {
   ): Promise<CartDTO> {
     const cartRepo = manager ? manager.getRepository(Cart) : this.cartRepo;
 
-    let cart = await cartRepo.findOne({ where: { userId } });
+    let cart = await cartRepo.findOne({ where: { user: { id: userId } } });
 
     if (!cart) {
-      cart = cartRepo.create({ userId });
+      cart = cartRepo.create({ user: { id: userId } });
       await cartRepo.save(cart);
     }
 
@@ -88,9 +88,11 @@ export class CartsRepository extends BaseRepository<Cart> {
 
     try {
       const cart = await this.findEntityById(cartId, manager);
+
       for await (const cartItem of cart.cartItems) {
         await this.cartItemRepo.removeCartItem(cartItem.id, manager);
       }
+
       await cartRepo.delete(cartId);
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0014_CART_REMOVE_ERROR, {
@@ -105,9 +107,11 @@ export class CartsRepository extends BaseRepository<Cart> {
 
     try {
       const cart = await this.findEntityById(cartId, manager);
+
       for await (const cartItem of cart.cartItems) {
         await this.cartItemRepo.removeCartItem(cartItem.id, manager);
       }
+
       await cartRepo.save(cart);
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0014_CART_REMOVE_ERROR, {

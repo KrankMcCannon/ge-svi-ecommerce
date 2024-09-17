@@ -3,9 +3,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Product } from './product.entity';
 
 @Entity('comments')
 export class Comment {
@@ -13,9 +16,12 @@ export class Comment {
   @ApiProperty({ description: 'The unique identifier for a comment' })
   id: string;
 
-  @Column('uuid')
   @ApiProperty({ description: 'The product associated with the comment' })
-  productId: string;
+  @ManyToOne(() => Product, (product) => product.comments, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'productId' })
+  product: Product;
 
   @Column('text')
   @ApiProperty({ description: 'The content of the comment' })

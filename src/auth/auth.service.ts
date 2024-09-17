@@ -3,10 +3,9 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
+import { CreateUserDto } from 'src/users/dtos';
 import { UserDTO } from 'src/users/dtos/user.dto';
 import { UsersService } from '../users/users.service';
-import { UserWithPasswordDTO } from 'src/users/dtos/user-password.dto';
-import { CreateUserDto } from 'src/users/dtos';
 
 @Injectable()
 export class AuthService {
@@ -20,24 +19,31 @@ export class AuthService {
    *
    * @param email User's email.
    * @param password User's password.
+   * @returns The validated user without password.
    * @throws CustomException if the user is not found or the password is invalid.
    */
-  async validateUser(email: string, password: string): Promise<void> {
-    const user = await this.usersService.findByEmail(email);
+  async validateUser(
+    inputEmail: string,
+    inputPassword: string,
+  ): Promise<UserDTO> {
+    const user = await this.usersService.findByEmail(inputEmail);
     if (!user) {
       throw CustomException.fromErrorEnum(Errors.E_0025_USER_NOT_FOUND, {
-        data: { email },
+        data: { email: inputEmail },
       });
     }
 
-    const userPassword = UserWithPasswordDTO.fromUserDTO(user);
     const isPasswordValid = await bcrypt.compare(
-      password,
-      userPassword.password,
+      inputPassword.trim(),
+      user.password,
     );
     if (!isPasswordValid) {
-      throw CustomException.fromErrorEnum(Errors.E_0027_INVALID_USER);
+      throw CustomException.fromErrorEnum(Errors.E_0027_INVALID_USER, {
+        data: { email: inputEmail, password: inputPassword },
+      });
     }
+
+    return UserDTO.fromPasswordDTO(user);
   }
 
   /**
@@ -46,8 +52,11 @@ export class AuthService {
    * @param user User data.
    * @returns Object containing the access token.
    */
-  async login(user: UserDTO): Promise<{ access_token: string }> {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+  async login(user: {
+    email: string;
+    password: string;
+  }): Promise<{ access_token: string }> {
+    const payload = { email: user.email, sub: user.email };
     return {
       access_token: this.jwtService.sign(payload),
     };
@@ -69,6 +78,7 @@ export class AuthService {
         data: { email: createUserDto.email },
       });
     }
+
     return await this.usersService.create(createUserDto);
   }
 }

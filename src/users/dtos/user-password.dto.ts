@@ -12,16 +12,8 @@ export class UserWithPasswordDTO extends UserDTO {
   @IsNotEmpty()
   password: string;
 
-  static fromUserDTO(user: UserDTO): UserWithPasswordDTO {
-    return plainToClass(UserWithPasswordDTO, user, {
-      excludeExtraneousValues: true,
-    });
-  }
-
   static fromEntity(user: User): UserWithPasswordDTO {
-    return plainToClass(UserWithPasswordDTO, user, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(UserWithPasswordDTO, user);
   }
 
   static toEntity(dto: UserWithPasswordDTO): User {

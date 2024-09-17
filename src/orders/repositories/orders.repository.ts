@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { BaseRepository } from 'src/base.repository';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
 import { EntityManager, Repository } from 'typeorm';
@@ -8,11 +9,13 @@ import { Order } from '../entities/order.entity';
 import { OrderStatus } from '../enum';
 
 @Injectable()
-export class OrdersRepository {
+export class OrdersRepository extends BaseRepository<Order> {
   constructor(
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
-  ) {}
+  ) {
+    super(orderRepo);
+  }
 
   async createOrder(createOrderDto: CreateOrderDTO): Promise<Order> {
     try {
