@@ -1,8 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsUUID } from 'class-validator';
-import { ProductDTO } from '../../products/dtos/product.dto';
+import { plainToClass } from 'class-transformer';
+import { IsInt, IsNotEmpty, IsString, IsUUID } from 'class-validator';
 import { CartItem } from '../entities/cartItem.entity';
-import { plainToClass, Type } from 'class-transformer';
 
 export class CartItemDTO {
   @ApiProperty({ description: 'The unique identifier for a cart item' })
@@ -16,10 +15,9 @@ export class CartItemDTO {
 
   @ApiProperty({
     description: 'The product associated with this cart item',
-    type: ProductDTO,
   })
-  @Type(() => ProductDTO)
-  product: ProductDTO;
+  @IsString()
+  productId: string;
 
   @ApiProperty({ description: 'The quantity of the product in the cart' })
   @IsInt()
@@ -36,7 +34,7 @@ export class CartItemDTO {
     const cartItem = new CartItem();
     cartItem.id = cartItemDTO.id;
     cartItem.cartId = cartItemDTO.cartId;
-    cartItem.product = ProductDTO.toEntity(cartItemDTO.product);
+    cartItem.productId = cartItemDTO.productId;
     cartItem.quantity = cartItemDTO.quantity;
     return cartItem;
   }

@@ -26,6 +26,9 @@ describe('CartsController', () => {
     description: 'Test Description',
     price: 100,
     stock: 10,
+    cartItems: [],
+    comments: [],
+    orderItems: [],
   };
 
   const mockCart: CartDTO = {
@@ -36,7 +39,7 @@ describe('CartsController', () => {
 
   const mockCartItem: CartItemDTO = {
     id: '1',
-    product: mockProduct,
+    productId: mockProduct.id,
     quantity: 2,
     cartId: mockCart.id,
   };

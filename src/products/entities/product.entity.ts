@@ -42,21 +42,21 @@ export class Product {
   })
   stock: number;
 
-  @OneToMany(() => CartItem, (cartItem) => cartItem.product)
+  @OneToMany(() => CartItem, (cartItem) => cartItem.productId)
   @ApiProperty({
     description: 'The cart items associated with the product',
     type: [CartItem],
   })
   cartItems: CartItem[];
 
-  @OneToMany(() => Comment, (comment) => comment.product, { cascade: true })
+  @OneToMany(() => Comment, (comment) => comment.productId, { cascade: true })
   @ApiProperty({
     description: 'The comments associated with the product',
     type: [Comment],
   })
   comments: Comment[];
 
-  @OneToMany(() => OrderItem, (orderItem) => orderItem.product, {
+  @OneToMany(() => OrderItem, (orderItem) => orderItem.productId, {
     cascade: true,
   })
   @ApiProperty({

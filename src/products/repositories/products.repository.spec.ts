@@ -18,6 +18,9 @@ describe('ProductsRepository', () => {
     description: 'Test Description',
     price: 100,
     stock: 10,
+    cartItems: [],
+    comments: [],
+    orderItems: [],
   };
 
   const updateProductDto: UpdateProductDto = {
@@ -105,6 +108,11 @@ describe('ProductsRepository', () => {
           description: product.description,
           price: product.price,
           stock: product.stock,
+          orderItems: [],
+          comments: [],
+          cartItems: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
         } as Product;
       });
   });

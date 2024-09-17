@@ -214,6 +214,56 @@ export const Errors = {
     HttpStatus.BAD_REQUEST,
   ),
 
+  // Order Errors
+  E_0028_ORDER_CREATION_ERROR: new ErrorEnumValue(
+    28,
+    ErrorLevel.ERROR,
+    'Error occurred while creating order',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+  ),
+  E_0029_ORDER_NOT_FOUND_ERROR: new ErrorEnumValue(
+    29,
+    ErrorLevel.ERROR,
+    'Order not found',
+    HttpStatus.NOT_FOUND,
+  ),
+  E_0030_ORDER_SAVE_ERROR: new ErrorEnumValue(
+    30,
+    ErrorLevel.ERROR,
+    'Error occurred while saving order',
+    HttpStatus.INTERNAL_SERVER_ERROR,
+  ),
+  E_0031_ORDER_REMOVE_ERROR: new ErrorEnumValue(
+    31,
+    ErrorLevel.ERROR,
+    'Error occurred while removing order',
+    HttpStatus.INTERNAL_SERVER_ERROR,
+  ),
+  E_0032_ORDER_ITEM_CREATION_ERROR: new ErrorEnumValue(
+    32,
+    ErrorLevel.ERROR,
+    'Error occurred while creating order item',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+  ),
+  E_0033_ORDER_ITEM_NOT_FOUND: new ErrorEnumValue(
+    33,
+    ErrorLevel.ERROR,
+    'Order item not found',
+    HttpStatus.NOT_FOUND,
+  ),
+  E_0034_ORDER_ITEM_SAVE_ERROR: new ErrorEnumValue(
+    34,
+    ErrorLevel.ERROR,
+    'Error occurred while saving order item',
+    HttpStatus.INTERNAL_SERVER_ERROR,
+  ),
+  E_0035_ORDER_ITEM_REMOVE_ERROR: new ErrorEnumValue(
+    35,
+    ErrorLevel.ERROR,
+    'Error occurred while removing order item',
+    HttpStatus.INTERNAL_SERVER_ERROR,
+  ),
+
   // Internal Server Error
   E_9999_INTERNAL_SERVER_ERROR: new ErrorEnumValue(
     9999,

@@ -18,10 +18,13 @@ describe('ProductsController', () => {
     description: 'Test Description',
     price: 100,
     stock: 10,
+    cartItems: [],
+    comments: [],
+    orderItems: [],
   };
 
   const mockUpdateProduct: ProductDTO = {
-    id: '1',
+    ...mockProduct,
     name: 'Updated Product',
     description: 'Updated Description',
     price: 200,
@@ -32,7 +35,7 @@ describe('ProductsController', () => {
     id: '1',
     content: 'Great product!',
     author: 'Test User',
-    product: mockProduct,
+    productId: mockProduct.id,
   };
 
   const mockProductsService = {

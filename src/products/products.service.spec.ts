@@ -25,6 +25,9 @@ describe('ProductsService', () => {
     description: 'Test Description',
     price: 100,
     stock: 10,
+    cartItems: [],
+    comments: [],
+    orderItems: [],
   };
 
   const mockUpdatedProduct: ProductDTO = {
@@ -36,7 +39,7 @@ describe('ProductsService', () => {
     id: '1',
     content: 'Great product!',
     author: 'John Doe',
-    product: mockProduct,
+    productId: mockProduct.id,
   };
 
   const mockProductsRepository = {
@@ -93,6 +96,9 @@ describe('ProductsService', () => {
           description: entity.description,
           price: entity.price,
           stock: entity.stock,
+          orderItems: entity.orderItems,
+          comments: entity.comments,
+          cartItems: entity.cartItems,
         } as ProductDTO;
       });
   });

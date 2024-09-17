@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { Product } from '../../products/entities/product.entity';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('cart_items')
 export class CartItem {
@@ -12,11 +11,9 @@ export class CartItem {
   @ApiProperty({ description: 'The cart that owns this cart item' })
   cartId: string;
 
-  @ManyToOne(() => Product, (product) => product.cartItems, {
-    onDelete: 'CASCADE',
-  })
+  @Column('uuid')
   @ApiProperty({ description: 'The product associated with this cart item' })
-  product: Product;
+  productId: string;
 
   @Column('int')
   @ApiProperty({ description: 'The quantity of the product in the cart' })

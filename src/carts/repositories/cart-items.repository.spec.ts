@@ -27,6 +27,9 @@ describe('CartItemsRepository', () => {
     description: 'Test Description',
     price: 100,
     stock: 10,
+    cartItems: [],
+    comments: [],
+    orderItems: [],
   };
 
   const mockCart: CartDTO = {
@@ -37,7 +40,7 @@ describe('CartItemsRepository', () => {
 
   const mockCartItem: CartItemDTO = {
     id: '1',
-    product: mockProduct,
+    productId: mockProduct.id,
     quantity: 2,
     cartId: mockCart.id,
   };
@@ -94,9 +97,9 @@ describe('CartItemsRepository', () => {
       .mockImplementation((entity: CartItem) => {
         return {
           id: entity.id,
-          product: entity.product,
           quantity: entity.quantity,
           cartId: entity.cartId,
+          productId: entity.productId,
         } as CartItemDTO;
       });
 
@@ -105,9 +108,9 @@ describe('CartItemsRepository', () => {
       .mockImplementation((dto: CartItemDTO) => {
         return {
           id: dto.id,
-          product: dto.product,
           quantity: dto.quantity,
           cartId: dto.cartId,
+          productId: dto.productId,
         } as CartItem;
       });
   });

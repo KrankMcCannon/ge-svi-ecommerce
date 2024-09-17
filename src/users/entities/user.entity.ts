@@ -40,7 +40,7 @@ export class User {
   @OneToOne(() => Cart, (cart) => cart.userId, { cascade: true, eager: true })
   cart: Cart;
 
-  @OneToMany(() => Order, (order) => order.user, { cascade: true })
+  @OneToMany(() => Order, (order) => order.userId, { cascade: true })
   @ApiProperty({ description: "User's past orders" })
   orders: Order[];
 
