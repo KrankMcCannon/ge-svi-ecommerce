@@ -52,11 +52,8 @@ export class AuthService {
    * @param user User data.
    * @returns Object containing the access token.
    */
-  async login(user: {
-    email: string;
-    password: string;
-  }): Promise<{ access_token: string }> {
-    const payload = { email: user.email, sub: user.email };
+  async login(user: UserDTO): Promise<{ access_token: string }> {
+    const payload = { email: user.email, sub: user.id };
     return {
       access_token: this.jwtService.sign(payload),
     };

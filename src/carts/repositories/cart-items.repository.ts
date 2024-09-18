@@ -4,9 +4,11 @@ import { BaseRepository } from 'src/base.repository';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
+import { Product } from 'src/products/entities';
 import { EntityManager, Repository } from 'typeorm';
-import { CartItem } from '../entities/cartItem.entity';
 import { CartItemDTO } from '../dtos/cart-item.dto';
+import { Cart } from '../entities';
+import { CartItem } from '../entities/cartItem.entity';
 
 @Injectable()
 export class CartItemsRepository extends BaseRepository<CartItem> {
@@ -15,6 +17,29 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
     private readonly cartItemRepo: Repository<CartItem>,
   ) {
     super(cartItemRepo);
+  }
+
+  /**
+   * Creates a new cart item.
+   *
+   * @param cart The cart entity to which the item belongs.
+   * @param product The product entity being added.
+   * @param quantity The quantity of the product.
+   * @param manager Optional transaction manager.
+   * @returns The newly created cart item.
+   */
+  async createCartItem(
+    cart: Cart,
+    product: Product,
+    quantity: number,
+    manager?: EntityManager,
+  ): Promise<CartItemDTO> {
+    const repo = manager ? manager.getRepository(CartItem) : this.cartItemRepo;
+
+    const cartItem = repo.create({ cart, product, quantity });
+    const savedCartItem = await repo.save(cartItem);
+
+    return CartItemDTO.fromEntity(savedCartItem);
   }
 
   /**

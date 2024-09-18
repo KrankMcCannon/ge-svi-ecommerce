@@ -117,6 +117,9 @@ export class ProductsRepository extends BaseRepository<Product> {
       await repo.update(id, updateProductDto);
       return await this.findOneById(id, manager);
     } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(Errors.E_0007_PRODUCT_UPDATE_ERROR, {
         data: { id, updateProductDto },
         originalError: error,
@@ -136,6 +139,9 @@ export class ProductsRepository extends BaseRepository<Product> {
       await this.findOneById(id, manager);
       await repo.delete(id);
     } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(Errors.E_0008_PRODUCT_REMOVE_ERROR, {
         data: { id },
         originalError: error,

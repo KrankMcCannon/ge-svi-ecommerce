@@ -18,10 +18,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any): Promise<UserDTO> {
-    const user = await this.usersService.findByEmail(payload.sub);
+    const user = await this.usersService.findById(payload.sub);
     if (!user) {
       throw CustomException.fromErrorEnum(Errors.E_0025_USER_NOT_FOUND, {
-        data: { email: payload.email },
+        data: { id: payload.sub },
       });
     }
     return user;

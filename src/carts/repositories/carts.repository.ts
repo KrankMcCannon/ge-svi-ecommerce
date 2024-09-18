@@ -3,11 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BaseRepository } from 'src/base.repository';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
+import { ProductDTO } from 'src/products/dtos';
+import { User } from 'src/users/entities';
 import { EntityManager, Repository } from 'typeorm';
 import { CartDTO } from '../dtos/cart.dto';
 import { Cart } from '../entities';
 import { CartItemsRepository } from './cart-items.repository';
-import { ProductDTO } from 'src/products/dtos';
 
 @Injectable()
 export class CartsRepository extends BaseRepository<Cart> {
@@ -17,6 +18,22 @@ export class CartsRepository extends BaseRepository<Cart> {
     private readonly cartItemRepo: CartItemsRepository,
   ) {
     super(cartRepo);
+  }
+
+  /**
+   * Creates a new cart for a user.
+   *
+   * @param user The user entity.
+   * @param manager Optional transaction manager.
+   * @returns The newly created cart.
+   */
+  async createCart(user: User, manager?: EntityManager): Promise<CartDTO> {
+    const cartRepo = manager ? manager.getRepository(Cart) : this.cartRepo;
+
+    const cart = cartRepo.create({ user });
+    const savedCart = await cartRepo.save(cart);
+
+    return CartDTO.fromEntity(savedCart);
   }
 
   /**
@@ -97,6 +114,27 @@ export class CartsRepository extends BaseRepository<Cart> {
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0014_CART_REMOVE_ERROR, {
         data: { id: cartId },
+        originalError: error,
+      });
+    }
+  }
+
+  /**
+   * Saves a cart entity.
+   *
+   * @param cart The cart entity to save.
+   * @param manager Optional transaction manager.
+   * @returns The saved cart entity as a DTO.
+   */
+  async saveCart(cart: Cart, manager?: EntityManager): Promise<CartDTO> {
+    const repo = manager ? manager.getRepository(Cart) : this.cartRepo;
+
+    try {
+      const savedCart = await repo.save(cart);
+      return CartDTO.fromEntity(savedCart);
+    } catch (error) {
+      throw CustomException.fromErrorEnum(Errors.E_0012_CART_ADD_ERROR, {
+        data: { cart },
         originalError: error,
       });
     }

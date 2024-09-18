@@ -31,6 +31,20 @@ import { AddCartItemToCartDto, CartDTO, CartItemDTO } from './dtos';
 export class CartsController {
   constructor(private readonly cartsService: CartsService) {}
 
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('user', 'admin')
+  @ApiOperation({ summary: 'Create a new cart' })
+  @ApiStandardResponse({
+    type: CartDTO,
+    description: 'Create a new cart',
+  })
+  async createCart(@Request() req: any): Promise<StandardResponse<CartDTO>> {
+    const userId = req.user.id;
+    const cart = await this.cartsService.createCart(userId);
+    return new StandardResponse(cart);
+  }
+
   @Post('cart')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('user', 'admin')

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/config/public.decorator';
 import {
@@ -23,9 +23,9 @@ export class AuthController {
     type: StandardResponse,
   })
   async login(
-    @Body() loginDto: { email: string; password: string },
+    @Request() user: any,
   ): Promise<StandardResponse<{ access_token: string }>> {
-    const token = await this.authService.login(loginDto);
+    const token = await this.authService.login(user);
     return new StandardResponse(token);
   }
 

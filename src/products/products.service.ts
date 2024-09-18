@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CustomException } from 'src/config/custom-exception';
-import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { DataSource, EntityManager } from 'typeorm';
@@ -96,7 +95,6 @@ export class ProductsService {
       return updatedProduct;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      CustomLogger.error(`Error updating product with ID ${id}`, error);
       if (error instanceof CustomException) {
         throw error;
       }
@@ -124,17 +122,13 @@ export class ProductsService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      if (!(error instanceof CustomException)) {
-        CustomLogger.error(`Error removing product with ID ${id}`, error);
-        throw CustomException.fromErrorEnum(
-          Errors.E_0008_PRODUCT_REMOVE_ERROR,
-          {
-            data: { id },
-            originalError: error,
-          },
-        );
+      if (error instanceof CustomException) {
+        throw error;
       }
-      throw error;
+      throw CustomException.fromErrorEnum(Errors.E_0008_PRODUCT_REMOVE_ERROR, {
+        data: { id },
+        originalError: error,
+      });
     } finally {
       await queryRunner.release();
     }
