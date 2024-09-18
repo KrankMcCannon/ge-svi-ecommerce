@@ -8,11 +8,11 @@ import {
   IsUUID,
   ValidateNested,
 } from 'class-validator';
+import { Cart } from 'src/carts/entities';
 import { OrderDTO } from 'src/orders/dtos/order.dto';
 import { CartDTO } from '../../carts/dtos/cart.dto';
 import { User } from '../entities';
 import { UserWithPasswordDTO } from './user-password.dto';
-import { Cart } from 'src/carts/entities';
 
 export class UserDTO {
   @ApiProperty({ description: 'Unique identifier for the user' })
@@ -56,7 +56,7 @@ export class UserDTO {
       const cart = new CartDTO();
       user.cart.id = cart.id;
     }
-    if (dto.orders && dto.orders.length > 0) {
+    if (dto.orders && dto.orders?.length > 0) {
       user.orders = dto.orders.map(OrderDTO.toEntity);
     }
     return user;
@@ -75,7 +75,7 @@ export class UserDTO {
       userDTO.cart = new CartDTO();
       userDTO.cart.id = user.cart.id;
     }
-    if (user.orders && user.orders.length > 0) {
+    if (user.orders && user.orders?.length > 0) {
       userDTO.orders = user.orders.map(OrderDTO.fromEntity);
     }
     return userDTO;
@@ -94,7 +94,7 @@ export class UserDTO {
       user.cart = new Cart();
       user.cart.id = dto.cart.id;
     }
-    if (dto.orders.length > 0) {
+    if (!dto.orders && dto.orders?.length > 0) {
       user.orders = dto.orders.map(OrderDTO.toEntity);
     }
     return user;

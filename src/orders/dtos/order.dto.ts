@@ -48,7 +48,7 @@ export class OrderDTO {
       orderDTO.user = new UserDTO();
       orderDTO.user.id = order.user.id;
     }
-    if (!order.orderItems && order.orderItems.length > 0) {
+    if (!order.orderItems && order.orderItems?.length > 0) {
       orderDTO.orderItems = order.orderItems.map(OrderItemDTO.fromEntity);
     }
     return orderDTO;
@@ -65,7 +65,7 @@ export class OrderDTO {
       order.user = new User();
       order.user.id = dto.user.id;
     }
-    if (!dto.orderItems && dto.orderItems.length > 0) {
+    if (!dto.orderItems && dto.orderItems?.length > 0) {
       order.orderItems = dto.orderItems.map(OrderItemDTO.toEntity);
     }
     return order;

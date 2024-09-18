@@ -2,9 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsArray, IsNotEmpty, IsUUID, ValidateNested } from 'class-validator';
 import { UserDTO } from 'src/users/dtos';
+import { User } from 'src/users/entities';
 import { Cart } from '../entities';
 import { CartItemDTO } from './cart-item.dto';
-import { User } from 'src/users/entities';
 
 export class CartDTO {
   @ApiProperty({ description: 'Unique identifier for the cart' })
@@ -32,7 +32,7 @@ export class CartDTO {
       cartDTO.user = new UserDTO();
       cartDTO.user.id = cart.user.id;
     }
-    if (!cart.cartItems && cart.cartItems.length > 0) {
+    if (!cart.cartItems && cart.cartItems?.length > 0) {
       cartDTO.cartItems = cart.cartItems.map(CartItemDTO.fromEntity);
     }
     return cartDTO;
@@ -48,7 +48,7 @@ export class CartDTO {
       cart.user = new User();
       cart.user.id = dto.user.id;
     }
-    if (!dto.cartItems && dto.cartItems.length > 0) {
+    if (!dto.cartItems && dto.cartItems?.length > 0) {
       cart.cartItems = dto.cartItems.map(CartItemDTO.toEntity);
     }
     return cart;
