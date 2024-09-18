@@ -35,14 +35,15 @@ describe('CartItemsRepository', () => {
   const mockCart: CartDTO = {
     id: '1',
     cartItems: [],
-    userId: mockUser.id,
+    user: mockUser,
   };
 
   const mockCartItem: CartItemDTO = {
     id: '1',
-    productId: mockProduct.id,
+    product: mockProduct,
+    cart: mockCart,
     quantity: 2,
-    cartId: mockCart.id,
+    price: 100,
   };
 
   mockUser.cart = mockCart;
@@ -51,6 +52,7 @@ describe('CartItemsRepository', () => {
   const mockOrmRepository = {
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
     save: jest.fn().mockResolvedValue(mockCartItem),
+    findOne: jest.fn().mockResolvedValue(mockCartItem),
     createQueryBuilder: jest.fn(() => ({
       innerJoinAndSelect: jest.fn().mockReturnThis(),
       innerJoin: jest.fn().mockReturnThis(),
@@ -63,7 +65,7 @@ describe('CartItemsRepository', () => {
     })),
     metadata: {
       target: 'CartItem',
-      primaryColumns: [{ propertyName: 'id' }],
+      primaryColumns: [{ propertyName: 'id' }, { propertyName: 'sort' }],
     },
   };
 
@@ -98,8 +100,9 @@ describe('CartItemsRepository', () => {
         return {
           id: entity.id,
           quantity: entity.quantity,
-          cartId: entity.cartId,
-          productId: entity.productId,
+          cart: entity.cart,
+          product: entity.product,
+          price: entity.price,
         } as CartItemDTO;
       });
 
@@ -109,8 +112,9 @@ describe('CartItemsRepository', () => {
         return {
           id: dto.id,
           quantity: dto.quantity,
-          cartId: dto.cartId,
-          productId: dto.productId,
+          cart: dto.cart,
+          product: dto.product,
+          price: dto.price,
         } as CartItem;
       });
   });

@@ -6,6 +6,7 @@ import { ProductDTO } from 'src/products/dtos';
 import { UserDTO } from 'src/users/dtos';
 import { OrderDTO, OrderItemDTO } from '../dtos';
 import { Order, OrderItem } from '../entities';
+import { OrderStatus } from '../enum';
 import { OrderItemsRepository } from './order-items.repository';
 
 describe('OrderItemsRepository', () => {
@@ -17,6 +18,9 @@ describe('OrderItemsRepository', () => {
     description: 'Test Description',
     price: 100,
     stock: 10,
+    cartItems: [],
+    comments: [],
+    orderItems: [],
   };
 
   const mockUser: UserDTO = {
@@ -30,28 +34,30 @@ describe('OrderItemsRepository', () => {
 
   const mockCart: CartDTO = {
     id: '1',
-    userId: '1',
     cartItems: [],
+    user: mockUser,
   };
 
   const mockCartItem: CartItemDTO = {
     id: '1',
     product: mockProduct,
+    cart: mockCart,
     quantity: 2,
-    cartId: mockCart.id,
+    price: 100,
   };
 
   const mockOrder: OrderDTO = {
     id: '1',
     user: mockUser,
+    status: OrderStatus.PENDING,
     orderItems: [],
   };
 
   const mockOrderItem: OrderItemDTO = {
     id: '1',
     product: mockProduct,
-    quantity: 2,
     order: mockOrder,
+    quantity: 2,
     price: 100,
   };
 
@@ -84,8 +90,8 @@ describe('OrderItemsRepository', () => {
         return {
           id: entity.id,
           product: entity.product,
-          quantity: entity.quantity,
           order: entity.order,
+          quantity: entity.quantity,
           price: entity.price,
         } as OrderItemDTO;
       });
@@ -96,8 +102,9 @@ describe('OrderItemsRepository', () => {
         return {
           id: entity.id,
           product: entity.product,
+          cart: entity.cart,
           quantity: entity.quantity,
-          cartId: entity.cartId,
+          price: entity.price,
         } as CartItem;
       });
 
@@ -106,6 +113,7 @@ describe('OrderItemsRepository', () => {
         id: entity.id,
         user: entity.user,
         orderItems: entity.orderItems,
+        status: entity.status,
       } as Order;
     });
   });
@@ -116,7 +124,7 @@ describe('OrderItemsRepository', () => {
 
   describe('Create Order Item', () => {
     it('should create an order item', async () => {
-      const result = await repository.createOrderItem(mockCartItem, mockOrder);
+      const result = await repository.createOrderItem(mockOrderItem);
 
       expect(result).toEqual(expect.objectContaining(mockOrderItem));
     });
@@ -124,9 +132,9 @@ describe('OrderItemsRepository', () => {
     it('should throw an error if the order item creation fails', async () => {
       mockOrmRepository.save.mockRejectedValue(new Error('Some Error'));
 
-      await expect(
-        repository.createOrderItem(mockCartItem, mockOrder),
-      ).rejects.toThrow(Error);
+      await expect(repository.createOrderItem(mockOrderItem)).rejects.toThrow(
+        Error,
+      );
     });
   });
 });

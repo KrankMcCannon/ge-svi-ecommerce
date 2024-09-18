@@ -43,7 +43,10 @@ export class BaseRepository<Entity> {
     try {
       const { primaryColumns } = repo.metadata;
       if (primaryColumns.length !== 1) {
-        throw new Error('Composite primary keys are not supported.');
+        throw CustomException.fromErrorEnum(Errors.E_0005_INTEGRITY_ERROR, {
+          data: { id },
+          originalError: new Error('Composite primary keys are not supported.'),
+        });
       }
       const primaryKey = primaryColumns[0].propertyName as keyof Entity;
       const entity = await repo.findOne({ where: { [primaryKey]: id } as any });
@@ -94,7 +97,7 @@ export class BaseRepository<Entity> {
       const order = sort.startsWith('-') ? 'DESC' : 'ASC';
       const field = sort.startsWith('-') ? sort.substring(1) : sort;
 
-      const columnExists = this.repo.metadata.columns.some(
+      const columnExists = this.repo.metadata.primaryColumns.some(
         (col) => col.propertyName === field,
       );
       if (columnExists) {
@@ -113,8 +116,12 @@ export class BaseRepository<Entity> {
    */
   protected applyFilters(qb: SelectQueryBuilder<Entity>, query: any) {
     Object.keys(query).forEach((key) => {
-      if (this.repo.metadata.columns.some((col) => col.propertyName === key)) {
-        qb.andWhere(`${this.repo.metadata.targetName}.${key} = :${key}`, {
+      if (
+        this.repo.metadata.primaryColumns.some(
+          (col) => col.propertyName === key,
+        )
+      ) {
+        qb.andWhere(`${this.repo.metadata.target}.${key} = :${key}`, {
           [key]: query[key],
         });
       }

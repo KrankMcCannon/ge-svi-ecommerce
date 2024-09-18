@@ -34,14 +34,15 @@ describe('CartsController', () => {
   const mockCart: CartDTO = {
     id: '1',
     cartItems: [],
-    userId: mockUser.id,
+    user: mockUser,
   };
 
   const mockCartItem: CartItemDTO = {
     id: '1',
-    productId: mockProduct.id,
+    product: mockProduct,
+    cart: mockCart,
     quantity: 2,
-    cartId: mockCart.id,
+    price: 100,
   };
 
   mockUser.cart = mockCart;

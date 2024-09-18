@@ -35,15 +35,16 @@ describe('CartRepository', () => {
 
   const mockCart: CartDTO = {
     id: '1',
-    userId: mockUser.id,
     cartItems: [],
+    user: mockUser,
   };
 
   const mockCartItem: CartItemDTO = {
     id: '1',
-    cartId: mockCart.id,
-    productId: mockProduct.id,
+    product: mockProduct,
+    cart: mockCart,
     quantity: 1,
+    price: 50,
   };
 
   mockUser.cart = mockCart;
@@ -114,16 +115,16 @@ describe('CartRepository', () => {
     jest.spyOn(CartDTO, 'fromEntity').mockImplementation((entity: Cart) => {
       return {
         id: entity.id,
-        userId: entity.userId,
         cartItems: entity.cartItems,
+        user: entity.user,
       } as CartDTO;
     });
 
     jest.spyOn(CartDTO, 'toEntity').mockImplementation((dto: CartDTO) => {
       return {
         id: dto.id,
-        userId: dto.userId,
         cartItems: dto.cartItems,
+        user: dto.user,
       } as Cart;
     });
   });

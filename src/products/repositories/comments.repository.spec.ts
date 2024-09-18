@@ -25,7 +25,7 @@ describe('CommentRepository', () => {
     id: '1',
     content: 'Excellent product!',
     author: 'John Doe',
-    productId: mockProduct.id,
+    product: mockProduct,
   };
 
   const mockOrmRepository = {
@@ -62,7 +62,7 @@ describe('CommentRepository', () => {
           id: entity.id,
           content: entity.content,
           author: entity.author,
-          productId: entity.productId,
+          product: entity.product,
         } as CommentDTO;
       });
 
@@ -75,11 +75,9 @@ describe('CommentRepository', () => {
           description: product.description,
           price: product.price,
           stock: product.stock,
-          orderItems: [],
-          comments: [],
-          cartItems: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          orderItems: product.orderItems,
+          comments: product.comments,
+          cartItems: product.cartItems,
         } as Product;
       });
   });

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { User } from 'src/users/entities';
 import { CustomException } from '../../../src/config/custom-exception';
 import { Order } from '../../../src/orders/entities/order.entity';
 import { OrdersRepository } from '../../../src/orders/repositories/orders.repository';
@@ -8,9 +9,21 @@ import { OrderStatus } from '../enum';
 describe('OrdersRepository', () => {
   let repository: OrdersRepository;
 
+  const mockUser: User = {
+    id: 'user-id',
+    name: 'Test User',
+    email: 'ex@mple.com',
+    password: 'password',
+    role: 'user',
+    cart: null,
+    orders: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
   const mockOrder: Order = {
     id: 'order-id',
-    userId: 'user-id',
+    user: mockUser,
     orderItems: [],
     status: OrderStatus.PENDING,
     createdAt: new Date(),

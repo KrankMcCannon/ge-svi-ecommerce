@@ -35,7 +35,7 @@ describe('ProductsController', () => {
     id: '1',
     content: 'Great product!',
     author: 'Test User',
-    productId: mockProduct.id,
+    product: mockProduct,
   };
 
   const mockProductsService = {

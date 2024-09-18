@@ -140,10 +140,12 @@ export class CartsService {
         userId,
         queryRunner.manager,
       );
-      const cartItem = await this.cartItemRepository.findCartItemById(
-        cartItemId,
-        queryRunner.manager,
-      );
+      const cartItem =
+        await this.cartItemRepository.findCartItemByCartIdAndProductId(
+          cartItemId,
+          productId,
+          queryRunner.manager,
+        );
 
       if (cartItem.cart.id !== cart.id || cartItem.product.id !== productId) {
         throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {

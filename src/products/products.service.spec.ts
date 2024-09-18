@@ -39,7 +39,7 @@ describe('ProductsService', () => {
     id: '1',
     content: 'Great product!',
     author: 'John Doe',
-    productId: mockProduct.id,
+    product: mockProduct,
   };
 
   const mockProductsRepository = {

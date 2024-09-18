@@ -1,7 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DeleteResult, EntityManager, Repository, UpdateResult } from 'typeorm';
-import { CreateUserDto, UpdateUserDto, UserDTO } from './dtos';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UserDTO,
+  UserWithPasswordDTO,
+} from './dtos';
 import { User } from './entities';
 import { UserRepository } from './users.repository';
 import { CartDTO } from 'src/carts/dtos';
@@ -19,10 +24,15 @@ describe('UsersRepository', () => {
     orders: [],
   };
 
+  const mockUserWithPassword: UserWithPasswordDTO = {
+    ...mockUser,
+    password: 'password',
+  };
+
   const mockCart: CartDTO = {
     id: '1',
     cartItems: [],
-    userId: mockUser.id,
+    user: mockUser,
   };
 
   mockUser.cart = mockCart;
@@ -43,9 +53,9 @@ describe('UsersRepository', () => {
   };
 
   const mockOrmRepository = {
-    create: jest.fn().mockReturnValue(mockUser),
-    findOne: jest.fn().mockResolvedValue(mockUser),
-    save: jest.fn().mockResolvedValue(mockUser),
+    create: jest.fn().mockReturnValue(mockUserWithPassword),
+    findOne: jest.fn().mockResolvedValue(mockUserWithPassword),
+    save: jest.fn().mockResolvedValue(mockUserWithPassword),
     update: jest.fn().mockResolvedValue(mockUpdateUser),
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
     createQueryBuilder: jest.fn(() => ({
@@ -53,7 +63,7 @@ describe('UsersRepository', () => {
       orderBy: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
       take: jest.fn().mockReturnThis(),
-      getMany: jest.fn().mockResolvedValue([mockUser]),
+      getMany: jest.fn().mockResolvedValue([mockUserWithPassword]),
     })),
     metadata: {
       target: 'User',
@@ -99,6 +109,20 @@ describe('UsersRepository', () => {
       getRepositoryToken(User),
     ) as jest.Mocked<Repository<User>>;
 
+    jest
+      .spyOn(UserWithPasswordDTO, 'fromEntity')
+      .mockImplementation((entity: User) => {
+        return {
+          id: entity.id,
+          name: entity.name,
+          email: entity.email,
+          role: entity.role,
+          cart: entity.cart,
+          orders: entity.orders,
+          password: entity.password,
+        };
+      });
+
     jest.spyOn(UserDTO, 'fromEntity').mockImplementation((entity: User) => {
       return {
         id: entity.id,
@@ -120,20 +144,20 @@ describe('UsersRepository', () => {
   });
 
   describe('Find User By Email', () => {
-    afterEach(() => {
-      ormRepository.findOne.mockResolvedValue(mockUser as User);
+    beforeEach(() => {
+      ormRepository.findOne.mockResolvedValue(mockUserWithPassword as User);
     });
 
     it('should find a user by email', async () => {
-      const result = await repository.findByEmail(mockUser.email);
+      const result = await repository.findByEmail(mockUserWithPassword.email);
 
-      expect(result).toEqual(expect.objectContaining(mockUser));
+      expect(result).toEqual(expect.objectContaining(mockUserWithPassword));
     });
 
     it('should return null if user is not found', async () => {
       ormRepository.findOne.mockResolvedValue(null);
 
-      const result = await repository.findByEmail(mockUser.email);
+      const result = await repository.findByEmail(mockUserWithPassword.email);
 
       expect(result).toBeNull();
     });
@@ -141,12 +165,14 @@ describe('UsersRepository', () => {
     it('should throw an error if an error occurs', async () => {
       ormRepository.findOne.mockRejectedValue(new Error('Some Error'));
 
-      await expect(repository.findByEmail(mockUser.email)).rejects.toThrow();
+      await expect(
+        repository.findByEmail(mockUserWithPassword.email),
+      ).rejects.toThrow();
     });
   });
 
   describe('Find User By ID', () => {
-    afterEach(() => {
+    beforeEach(() => {
       ormRepository.findOne.mockResolvedValue(mockUser as User);
     });
 
@@ -170,7 +196,7 @@ describe('UsersRepository', () => {
   });
 
   describe('Create User', () => {
-    afterEach(() => {
+    beforeEach(() => {
       ormRepository.save.mockResolvedValue(mockUser as User);
     });
 
@@ -202,17 +228,20 @@ describe('UsersRepository', () => {
   });
 
   describe('Update User', () => {
-    afterEach(() => {
+    beforeEach(() => {
       ormRepository.update.mockResolvedValue(
         mockUpdateUser as unknown as UpdateResult,
       );
-      ormRepository.findOne.mockResolvedValue(mockUser as User);
+      ormRepository.findOne.mockResolvedValue(mockUserWithPassword as User);
     });
 
     it('should update a user', async () => {
       ormRepository.findOne.mockResolvedValue(mockUpdateUser as User);
 
-      const result = await repository.updateUser(mockUser, updateUserDto);
+      const result = await repository.updateUser(
+        mockUserWithPassword,
+        updateUserDto,
+      );
 
       expect(result).toEqual(expect.objectContaining(mockUpdateUser));
     });
@@ -235,25 +264,25 @@ describe('UsersRepository', () => {
       ormRepository.update.mockRejectedValue(new Error('Some Error'));
 
       await expect(
-        repository.updateUser(mockUser, updateUserDto),
+        repository.updateUser(mockUserWithPassword, updateUserDto),
       ).rejects.toThrow();
     });
   });
 
   describe('Delete User', () => {
-    afterEach(() => {
+    beforeEach(() => {
       ormRepository.delete.mockResolvedValue({ affected: 1 } as DeleteResult);
     });
 
     it('should delete a user', async () => {
-      const result = await repository.deleteUser(mockUser.id);
+      const result = await repository.deleteUser(mockUserWithPassword.id);
 
       expect(result).toBeUndefined();
     });
 
     it('should delete a user with a transaction manager', async () => {
       const result = await repository.deleteUser(
-        mockUser.id,
+        mockUserWithPassword.id,
         mockEntityManager,
       );
 
@@ -263,18 +292,22 @@ describe('UsersRepository', () => {
     it('should throw an error if an error occurs', async () => {
       ormRepository.delete.mockRejectedValue(new Error('Some Error'));
 
-      await expect(repository.deleteUser(mockUser.id)).rejects.toThrow();
+      await expect(
+        repository.deleteUser(mockUserWithPassword.id),
+      ).rejects.toThrow();
     });
 
     it('should throw an error if user is not found', async () => {
       ormRepository.delete.mockResolvedValue({ affected: 0 } as DeleteResult);
 
-      await expect(repository.deleteUser(mockUser.id)).rejects.toThrow();
+      await expect(
+        repository.deleteUser(mockUserWithPassword.id),
+      ).rejects.toThrow();
     });
   });
 
   describe('Save User', () => {
-    afterEach(() => {
+    beforeEach(() => {
       ormRepository.save.mockResolvedValue(mockUser as User);
     });
 

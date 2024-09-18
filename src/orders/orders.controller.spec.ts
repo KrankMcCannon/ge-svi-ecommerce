@@ -5,13 +5,23 @@ import { OrderDTO } from '../../src/orders/dtos/order.dto';
 import { OrdersController } from '../../src/orders/orders.controller';
 import { OrdersService } from '../../src/orders/orders.service';
 import { OrderStatus } from './enum';
+import { UserDTO } from 'src/users/dtos';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
 
+  const mockUser: UserDTO = {
+    id: 'user-id',
+    email: 'ex@mple.com',
+    name: 'name',
+    role: 'user',
+    cart: null,
+    orders: [],
+  };
+
   const mockOrderDTO: OrderDTO = {
     id: 'order-id',
-    userId: 'user-id',
+    user: mockUser,
     orderItems: [],
     status: OrderStatus.PENDING,
   };
