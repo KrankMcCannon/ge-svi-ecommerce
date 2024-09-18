@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { plainToClass, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsDecimal,
@@ -71,10 +71,25 @@ export class ProductDTO {
   orderItems: OrderItemDTO[];
 
   static fromEntity(product: Product): ProductDTO {
-    return plainToClass(ProductDTO, product);
+    if (!product) {
+      return null;
+    }
+    const productDTO = new ProductDTO();
+    productDTO.id = product.id;
+    productDTO.name = product.name;
+    productDTO.description = product.description;
+    productDTO.price = product.price;
+    productDTO.stock = product.stock;
+    productDTO.cartItems = product.cartItems.map(CartItemDTO.fromEntity);
+    productDTO.comments = product.comments.map(CommentDTO.fromEntity);
+    productDTO.orderItems = product.orderItems.map(OrderItemDTO.fromEntity);
+    return productDTO;
   }
 
   static toEntity(dto: ProductDTO): Product {
+    if (!dto) {
+      return null;
+    }
     const product = new Product();
     product.id = dto.id;
     product.name = dto.name;

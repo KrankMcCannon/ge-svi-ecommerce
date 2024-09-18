@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { plainToClass, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsEnum,
@@ -7,10 +7,11 @@ import {
   IsUUID,
   ValidateNested,
 } from 'class-validator';
+import { UserDTO } from 'src/users/dtos';
+import { User } from 'src/users/entities';
 import { Order } from '../entities/order.entity';
 import { OrderStatus } from '../enum';
 import { OrderItemDTO } from './order-item.dto';
-import { UserDTO } from 'src/users/dtos';
 
 export class OrderDTO {
   @ApiProperty({ description: 'Unique identifier for the order' })
@@ -37,15 +38,36 @@ export class OrderDTO {
   orderItems: OrderItemDTO[];
 
   static fromEntity(order: Order): OrderDTO {
-    return plainToClass(OrderDTO, order);
+    if (!order) {
+      return null;
+    }
+    const orderDTO = new OrderDTO();
+    orderDTO.id = order.id;
+    orderDTO.status = order.status;
+    if (order.user) {
+      orderDTO.user = new UserDTO();
+      orderDTO.user.id = order.user.id;
+    }
+    if (!order.orderItems && order.orderItems.length > 0) {
+      orderDTO.orderItems = order.orderItems.map(OrderItemDTO.fromEntity);
+    }
+    return orderDTO;
   }
 
   static toEntity(dto: OrderDTO): Order {
+    if (!dto) {
+      return null;
+    }
     const order = new Order();
     order.id = dto.id;
     order.status = dto.status;
-    order.user = UserDTO.toEntity(dto.user);
-    order.orderItems = dto.orderItems.map(OrderItemDTO.toEntity);
+    if (dto.user) {
+      order.user = new User();
+      order.user.id = dto.user.id;
+    }
+    if (!dto.orderItems && dto.orderItems.length > 0) {
+      order.orderItems = dto.orderItems.map(OrderItemDTO.toEntity);
+    }
     return order;
   }
 }

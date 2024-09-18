@@ -1,8 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import { IsDecimal, IsInt, IsNotEmpty, IsUUID } from 'class-validator';
-import { OrderItem } from '../entities/order-item.entity';
-import { plainToClass, Type } from 'class-transformer';
 import { ProductDTO } from 'src/products/dtos';
+import { Product } from 'src/products/entities';
+import { Order } from '../entities';
+import { OrderItem } from '../entities/order-item.entity';
 import { OrderDTO } from './order.dto';
 
 export class OrderItemDTO {
@@ -40,16 +42,40 @@ export class OrderItemDTO {
   order: OrderDTO;
 
   static fromEntity(orderItem: OrderItem): OrderItemDTO {
-    return plainToClass(OrderItemDTO, orderItem);
+    if (!orderItem) {
+      return null;
+    }
+    const orderItemDTO = new OrderItemDTO();
+    orderItemDTO.id = orderItem.id;
+    orderItemDTO.quantity = orderItem.quantity;
+    orderItemDTO.price = orderItem.price;
+    if (orderItem.product) {
+      orderItemDTO.product = new ProductDTO();
+      orderItemDTO.product.id = orderItem.product.id;
+    }
+    if (orderItem.order) {
+      orderItemDTO.order = new OrderDTO();
+      orderItemDTO.order.id = orderItem.order.id;
+    }
+    return orderItemDTO;
   }
 
   static toEntity(dto: OrderItemDTO): OrderItem {
+    if (!dto) {
+      return null;
+    }
     const orderItem = new OrderItem();
     orderItem.id = dto.id;
     orderItem.quantity = dto.quantity;
     orderItem.price = dto.price;
-    orderItem.product = ProductDTO.toEntity(dto.product);
-    orderItem.order = OrderDTO.toEntity(dto.order);
+    if (dto.product) {
+      orderItem.product = new Product();
+      orderItem.product.id = dto.product.id;
+    }
+    if (dto.order) {
+      orderItem.order = new Order();
+      orderItem.order.id = dto.order.id;
+    }
     return orderItem;
   }
 }

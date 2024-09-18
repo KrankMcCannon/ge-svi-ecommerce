@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { plainToClass, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
-import { Comment } from '../entities';
+import { Comment, Product } from '../entities';
 import { ProductDTO } from './product.dto';
 
 export class CommentDTO {
@@ -28,15 +28,33 @@ export class CommentDTO {
   product: ProductDTO;
 
   static fromEntity(comment: Comment): CommentDTO {
-    return plainToClass(CommentDTO, comment);
+    if (!comment) {
+      return null;
+    }
+
+    const commentDTO = new CommentDTO();
+    commentDTO.id = comment.id;
+    commentDTO.content = comment.content;
+    commentDTO.author = comment.author;
+    if (commentDTO.product) {
+      commentDTO.product = new ProductDTO();
+      commentDTO.product.id = comment.product.id;
+    }
+    return commentDTO;
   }
 
-  static toEntity(commentDTO: CommentDTO): Comment {
+  static toEntity(dto: CommentDTO): Comment {
+    if (!dto) {
+      return null;
+    }
     const comment = new Comment();
-    comment.id = commentDTO.id;
-    comment.content = commentDTO.content;
-    comment.author = commentDTO.author;
-    comment.product = ProductDTO.toEntity(commentDTO.product);
+    comment.id = dto.id;
+    comment.content = dto.content;
+    comment.author = dto.author;
+    if (dto.product) {
+      comment.product = new Product();
+      comment.product.id = dto.product.id;
+    }
     return comment;
   }
 }

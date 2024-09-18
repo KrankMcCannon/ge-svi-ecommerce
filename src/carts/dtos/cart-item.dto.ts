@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { plainToClass, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { IsInt, IsNotEmpty, IsPositive, IsUUID } from 'class-validator';
 import { ProductDTO } from 'src/products/dtos';
+import { Product } from 'src/products/entities';
+import { Cart } from '../entities';
 import { CartItem } from '../entities/cartItem.entity';
 import { CartDTO } from './cart.dto';
 
@@ -37,16 +39,40 @@ export class CartItemDTO {
   price: number;
 
   static fromEntity(cartItem: CartItem): CartItemDTO {
-    return plainToClass(CartItemDTO, cartItem);
+    if (!cartItem) {
+      return null;
+    }
+    const cartItemDTO = new CartItemDTO();
+    cartItemDTO.id = cartItem.id;
+    cartItemDTO.quantity = cartItem.quantity;
+    cartItemDTO.price = cartItem.price;
+    if (cartItem.cart) {
+      cartItemDTO.cart = new CartDTO();
+      cartItemDTO.cart.id = cartItem.cart.id;
+    }
+    if (cartItem.product) {
+      cartItemDTO.product = new ProductDTO();
+      cartItemDTO.product.id = cartItem.product.id;
+    }
+    return cartItemDTO;
   }
 
   static toEntity(cartItemDTO: CartItemDTO): CartItem {
+    if (!cartItemDTO) {
+      return null;
+    }
     const cartItem = new CartItem();
     cartItem.id = cartItemDTO.id;
-    cartItem.cart = CartDTO.toEntity(cartItemDTO.cart);
-    cartItem.product = ProductDTO.toEntity(cartItemDTO.product);
     cartItem.quantity = cartItemDTO.quantity;
     cartItem.price = cartItemDTO.price;
+    if (cartItemDTO.cart) {
+      cartItem.cart = new Cart();
+      cartItem.cart.id = cartItemDTO.cart.id;
+    }
+    if (cartItemDTO.product) {
+      cartItem.product = new Product();
+      cartItem.product.id = cartItemDTO.product.id;
+    }
     return cartItem;
   }
 }
