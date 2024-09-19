@@ -23,9 +23,9 @@ export class AuthController {
     type: StandardResponse,
   })
   async login(
-    @Request() user: any,
+    @Request() req: any,
   ): Promise<StandardResponse<{ access_token: string }>> {
-    const token = await this.authService.login(user);
+    const token = await this.authService.login(req.user);
     return new StandardResponse(token);
   }
 
