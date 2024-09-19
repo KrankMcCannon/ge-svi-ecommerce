@@ -1,20 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { CartDTO, CartItemDTO } from 'src/carts/dtos';
+import { Cart, CartItem } from 'src/carts/entities';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
-import { ProductDTO } from 'src/products/dtos';
-import { UserDTO } from 'src/users/dtos';
+import { Product } from 'src/products/entities';
+import { User } from 'src/users/entities';
 import { EntityManager, Repository } from 'typeorm';
-import { OrderDTO, OrderItemDTO } from '../dtos';
-import { OrderItem } from '../entities';
+import { OrderItemDTO } from '../dtos';
+import { Order, OrderItem } from '../entities';
 import { OrderStatus } from '../enum';
 import { OrderItemsRepository } from './order-items.repository';
 
 describe('OrderItemsRepository', () => {
   let repository: OrderItemsRepository;
 
-  const mockProduct: ProductDTO = {
+  const mockProduct: Product = {
     id: '1',
     name: 'Test Product',
     description: 'Test Description',
@@ -23,24 +23,31 @@ describe('OrderItemsRepository', () => {
     cartItems: [],
     comments: [],
     orderItems: [],
+    createdAt: new Date(),
+    updatedAt: null,
   };
 
-  const mockUser: UserDTO = {
+  const mockUser: User = {
     id: '1',
     email: 'ex@mple.com',
     name: 'John Doe',
     role: 'user',
     cart: null,
     orders: [],
+    createdAt: new Date(),
+    updatedAt: null,
+    password: 'password',
   };
 
-  const mockCart: CartDTO = {
+  const mockCart: Cart = {
     id: '1',
     cartItems: [],
     user: mockUser,
+    createdAt: new Date(),
+    updatedAt: null,
   };
 
-  const mockCartItem: CartItemDTO = {
+  const mockCartItem: CartItem = {
     id: '1',
     product: mockProduct,
     cart: mockCart,
@@ -48,14 +55,16 @@ describe('OrderItemsRepository', () => {
     price: 100,
   };
 
-  const mockOrder: OrderDTO = {
+  const mockOrder: Order = {
     id: '1',
     user: mockUser,
     status: OrderStatus.PENDING,
     orderItems: [],
+    createdAt: new Date(),
+    updatedAt: null,
   };
 
-  const mockOrderItem: OrderItemDTO = {
+  const mockOrderItem: OrderItem = {
     id: '1',
     product: mockProduct,
     order: mockOrder,
@@ -74,17 +83,35 @@ describe('OrderItemsRepository', () => {
   const mockOrmRepository = {
     create: jest.fn().mockReturnValue(mockOrderItem),
     save: jest.fn().mockResolvedValue(mockOrderItem),
-    find: jest.fn().mockResolvedValue([mockOrderItem]),
+    findOne: jest.fn().mockResolvedValue(mockOrderItem),
     metadata: {
       target: 'OrderItem',
       primaryColumns: [{ propertyName: 'id' }],
     },
+    createQueryBuilder: jest.fn().mockReturnValue({
+      where: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([mockOrderItem]),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+    }),
+    getRepository: jest.fn().mockReturnValue({
+      findOne: jest.fn().mockResolvedValue(mockOrderItem),
+      save: jest.fn().mockResolvedValue(mockOrderItem),
+      create: jest.fn().mockReturnValue(mockOrderItem),
+      metadata: {
+        target: 'OrderItem',
+        primaryColumns: [{ propertyName: 'id' }],
+      },
+    }),
   } as unknown as jest.Mocked<Repository<OrderItem>>;
 
   const mockEntityManager = {
     getRepository: jest.fn().mockReturnValue({
       findOne: jest.fn().mockResolvedValue(mockOrderItem),
       save: jest.fn().mockResolvedValue(mockOrderItem),
+      create: jest.fn().mockReturnValue(mockOrderItem),
       metadata: {
         target: 'OrderItem',
         primaryColumns: [{ propertyName: 'id' }],
@@ -171,7 +198,9 @@ describe('OrderItemsRepository', () => {
     });
 
     it('should throw an error if the order items are not found', async () => {
-      mockOrmRepository.find.mockResolvedValue([]);
+      (
+        mockOrmRepository.createQueryBuilder().getMany as jest.Mock
+      ).mockResolvedValue([]);
 
       const result = await repository.findOrderItemsByOrderId(mockOrder.id);
       expect(result).toEqual([]);

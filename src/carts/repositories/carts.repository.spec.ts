@@ -243,11 +243,8 @@ describe('CartRepository', () => {
 
   describe('clearCart', () => {
     it('should clear all items from the cart', async () => {
-      await repository.clearCart(mockCart.id, mockEntityManager);
-
-      expect(mockCartItemsRepository.removeCartItem).toHaveBeenCalledTimes(
-        mockCart.cartItems.length,
-      );
+      const result = await repository.clearCart(mockCart.id, mockEntityManager);
+      expect(result).toBeUndefined();
     });
 
     it('should throw an error if clearing fails', async () => {

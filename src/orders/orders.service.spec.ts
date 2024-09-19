@@ -7,13 +7,12 @@ import { CartsService } from '../../src/carts/carts.service';
 import { CustomException } from '../../src/config/custom-exception';
 import { Errors } from '../../src/config/errors';
 import { OrderDTO } from '../../src/orders/dtos/order.dto';
+import { Order } from '../../src/orders/entities';
+import { OrderStatus } from '../../src/orders/enum';
 import { OrdersService } from '../../src/orders/orders.service';
 import { OrderItemsRepository } from '../../src/orders/repositories/order-items.repository';
 import { OrdersRepository } from '../../src/orders/repositories/orders.repository';
 import { ProductsService } from '../../src/products/products.service';
-import { CreateOrderDTO } from './dtos';
-import { Order } from './entities';
-import { OrderStatus } from './enum';
 
 describe('OrdersService', () => {
   let service: OrdersService;
@@ -31,7 +30,7 @@ describe('OrdersService', () => {
     id: 'order-id',
     user: mockUser,
     orderItems: [],
-    status: OrderStatus.PENDING,
+    status: OrderStatus.CREATED,
   };
 
   const mockCart: CartDTO = {
@@ -65,15 +64,20 @@ describe('OrdersService', () => {
   const mockOrdersRepository = {
     createOrder: jest.fn().mockResolvedValue(mockOrder),
     findOrderById: jest.fn().mockResolvedValue(mockOrder),
+    findOrdersByUserId: jest.fn().mockResolvedValue([mockOrder]),
+    updateOrderStatus: jest.fn().mockResolvedValue(mockOrder),
   };
 
   const mockOrderItemsRepository = {
     createOrderItem: jest.fn().mockResolvedValue(mockCartItem),
+    findOrderItemsByOrderId: jest.fn().mockResolvedValue([mockCartItem]),
+    findOrderItemById: jest.fn().mockResolvedValue(mockCartItem),
   };
 
   const mockCartsService = {
-    findCart: jest.fn().mockResolvedValue(mockCart),
-    clearCart: jest.fn().mockResolvedValue(undefined),
+    findCartByUserId: jest.fn().mockResolvedValue(mockCart),
+    findCartItems: jest.fn().mockResolvedValue([mockCartItem]),
+    deleteCart: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockProductsService = {
@@ -122,38 +126,46 @@ describe('OrdersService', () => {
     });
   });
 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('createOrder', () => {
-    const createOrderDto: CreateOrderDTO = {
-      userId: 'user-id',
-      status: OrderStatus.PENDING,
-    };
-    it('should create an order successfully', async () => {
-      const result = await service.createOrder(createOrderDto);
+  describe('checkout', () => {
+    it('should successfully create an order from cart', async () => {
+      const result = await service.checkout(mockUser.id);
 
       expect(result).toEqual(expect.objectContaining(mockOrder));
     });
 
-    it('should throw an exception if cart is empty', async () => {
-      mockCartsService.findCart.mockResolvedValueOnce(null);
+    it('should throw error if cart is empty', async () => {
+      mockCartsService.findCartByUserId.mockResolvedValueOnce(null);
 
-      await expect(service.createOrder(createOrderDto)).rejects.toThrow(
+      await expect(service.checkout(mockUser.id)).rejects.toThrow(
         CustomException,
       );
+    });
+
+    it('should handle transaction rollback on failure', async () => {
+      mockCartsService.deleteCart.mockRejectedValueOnce(
+        new Error('Deletion failed'),
+      );
+
+      await expect(service.checkout(mockUser.id)).rejects.toThrow(Error);
     });
   });
 
   describe('findOrderById', () => {
-    it('should return an order', async () => {
+    it('should return an order by ID', async () => {
       const result = await service.findOrderById(mockOrder.id);
 
       expect(result).toEqual(expect.objectContaining(mockOrder));
     });
 
-    it('should throw an exception if order not found', async () => {
+    it('should throw an exception if order is not found', async () => {
       mockOrdersRepository.findOrderById.mockRejectedValueOnce(
         CustomException.fromErrorEnum(Errors.E_0029_ORDER_NOT_FOUND_ERROR),
       );
@@ -161,6 +173,86 @@ describe('OrdersService', () => {
       await expect(service.findOrderById('invalid-id')).rejects.toThrow(
         CustomException,
       );
+    });
+  });
+
+  describe('findOrdersByUserId', () => {
+    it('should return a list of orders for the user', async () => {
+      const result = await service.findOrdersByUserId(mockUser.id);
+
+      expect(result).toEqual(
+        expect.arrayContaining([expect.objectContaining(mockOrder)]),
+      );
+    });
+
+    it('should return an empty array if no orders are found', async () => {
+      mockOrdersRepository.findOrdersByUserId.mockResolvedValueOnce([]);
+      const result = await service.findOrdersByUserId(mockUser.id);
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('findOrderItemsByOrderId', () => {
+    it('should return a list of order items for an order', async () => {
+      const result = await service.findOrderItemsByOrderId(mockOrder.id);
+
+      expect(result).toEqual(
+        expect.arrayContaining([expect.objectContaining(mockCartItem)]),
+      );
+    });
+
+    it('should return an empty array if no order items are found', async () => {
+      mockOrderItemsRepository.findOrderItemsByOrderId.mockResolvedValueOnce(
+        [],
+      );
+      const result = await service.findOrderItemsByOrderId(mockOrder.id);
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('findOrderItemById', () => {
+    it('should return an order item by ID', async () => {
+      const result = await service.findOrderItemById(mockCartItem.id);
+
+      expect(result).toEqual(expect.objectContaining(mockCartItem));
+    });
+
+    it('should throw an exception if order item is not found', async () => {
+      mockOrderItemsRepository.findOrderItemById.mockRejectedValueOnce(
+        CustomException.fromErrorEnum(Errors.E_0033_ORDER_ITEM_NOT_FOUND),
+      );
+
+      await expect(service.findOrderItemById('invalid-id')).rejects.toThrow(
+        CustomException,
+      );
+    });
+  });
+
+  describe('updateOrderStatus', () => {
+    it('should update the order status', async () => {
+      const updatedOrder = { ...mockOrder, status: OrderStatus.SHIPPED };
+      mockOrdersRepository.updateOrderStatus.mockResolvedValueOnce(
+        updatedOrder,
+      );
+
+      const result = await service.updateOrderStatus(
+        mockOrder.id,
+        OrderStatus.SHIPPED,
+      );
+
+      expect(result).toEqual(expect.objectContaining(updatedOrder));
+    });
+
+    it('should throw an exception if update fails', async () => {
+      mockOrdersRepository.updateOrderStatus.mockRejectedValueOnce(
+        CustomException.fromErrorEnum(Errors.E_0030_ORDER_SAVE_ERROR),
+      );
+
+      await expect(
+        service.updateOrderStatus(mockOrder.id, OrderStatus.SHIPPED),
+      ).rejects.toThrow(CustomException);
     });
   });
 });

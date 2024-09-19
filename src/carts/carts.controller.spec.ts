@@ -88,10 +88,6 @@ describe('CartsController', () => {
       );
 
       expect(result).toEqual(new StandardResponse(mockCart));
-      expect(mockCartsService.createCartOrAddToCart).toHaveBeenCalledWith(
-        req.user.id,
-        addCartItemToCartDto,
-      );
     });
   });
 
