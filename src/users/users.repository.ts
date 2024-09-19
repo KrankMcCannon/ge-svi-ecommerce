@@ -43,14 +43,22 @@ export class UserRepository extends BaseRepository<User> {
    * Creates a new user.
    *
    * @param user User entity to create.
+   * @param manager Optional transaction manager.
    * @returns The created user.
    */
-  async createUser(createUserDto: CreateUserDto): Promise<UserDTO> {
+  async createUser(
+    createUserDto: CreateUserDto,
+    manager?: EntityManager,
+  ): Promise<UserDTO> {
+    const repo = manager ? manager.getRepository(User) : this.userRepo;
     try {
-      const createdUser = this.userRepo.create(createUserDto);
-      const user = await this.saveEntity(createdUser);
+      const createdUser = repo.create(createUserDto);
+      const user = await this.saveEntity(createdUser, manager);
       return UserDTO.fromEntity(user);
     } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(Errors.E_0022_USER_CREATION_ERROR, {
         data: { user: createUserDto },
         originalError: error,
@@ -62,6 +70,7 @@ export class UserRepository extends BaseRepository<User> {
    * Finds a user by ID.
    *
    * @param id User's ID.
+   * @param manager Optional transaction manager.
    * @returns The found user.
    */
   async findById(id: string, manager?: EntityManager): Promise<UserDTO> {
@@ -72,7 +81,9 @@ export class UserRepository extends BaseRepository<User> {
   /**
    * Updates a user.
    *
-   * @param user User entity to update.
+   * @param inputUser User entity to update.
+   * @param updateUserDto DTO for updating a user.
+   * @param manager Optional transaction manager.
    * @returns The updated user.
    */
   async updateUser(
@@ -87,6 +98,9 @@ export class UserRepository extends BaseRepository<User> {
       const updatedUser = await this.findEntityById(user.id, manager);
       return UserDTO.fromEntity(updatedUser);
     } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(Errors.E_0023_USER_UPDATE_ERROR, {
         data: { user: updateUserDto },
         originalError: error,
@@ -110,6 +124,9 @@ export class UserRepository extends BaseRepository<User> {
         });
       }
     } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(Errors.E_0024_USER_REMOVE_ERROR, {
         data: { id },
         originalError: error,
@@ -120,19 +137,22 @@ export class UserRepository extends BaseRepository<User> {
   /**
    * Saves a user.
    *
-   * @param user User entity to save.
+   * @param inputUser User entity to save.
+   * @param manager Optional transaction manager.
    * @returns The saved user.
    */
   async saveUser(
     inputUser: UserDTO,
     manager?: EntityManager,
   ): Promise<UserDTO> {
-    const repo = manager ? manager.getRepository(User) : this.repo;
     const user = UserDTO.toEntity(inputUser);
     try {
-      const savedUser = await repo.save(user);
+      const savedUser = await this.saveEntity(user, manager);
       return UserDTO.fromEntity(savedUser);
     } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(Errors.E_0022_USER_CREATION_ERROR, {
         data: { user },
         originalError: error,

@@ -14,11 +14,19 @@ export class BaseRepository<Entity> {
    * Saves an entity to the database.
    *
    * @param entity Entity to save.
+   * @param manager Optional entity manager.
    * @returns The saved entity.
    */
-  protected async saveEntity(entity: Entity): Promise<Entity> {
+  protected async saveEntity(
+    entity: Entity,
+    manager?: EntityManager,
+  ): Promise<Entity> {
+    const repo = manager
+      ? manager.getRepository<Entity>(this.repo.metadata.target)
+      : this.repo;
+
     try {
-      return await this.repo.save(entity);
+      return await repo.save(entity);
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, {
         data: { entity },
@@ -31,6 +39,7 @@ export class BaseRepository<Entity> {
    * Find an entity by its ID.
    *
    * @param entity Entity to delete.
+   * @param manager Optional entity manager.
    * @returns The found entity.
    */
   protected async findEntityById(

@@ -50,14 +50,14 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
    * @returns List of cart items.
    */
   async findCartItems(
-    userId: string,
-    pagination: PaginationInfo,
+    cartId: string,
+    pagination?: PaginationInfo,
     query?: any,
   ): Promise<CartItemDTO[]> {
     const qb = this.cartItemRepo.createQueryBuilder('cartItem');
     qb.innerJoinAndSelect('cartItem.product', 'product')
       .innerJoin('cartItem.cart', 'cart')
-      .where('cart.user.id = :userId', { userId });
+      .where('cart.id = :cartId', { cartId });
 
     this.applyFilters(qb, query);
     this.applySorting(qb, query.sort);

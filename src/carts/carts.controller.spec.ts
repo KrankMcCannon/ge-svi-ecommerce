@@ -81,7 +81,10 @@ describe('CartsController', () => {
         quantity: 2,
       };
       const req = { user: mockUser };
-      const result = await controller.addToCart(addProductToCartDto, req);
+      const result = await controller.createCartOrAddToCart(
+        addProductToCartDto,
+        req,
+      );
       expect(result).toEqual(new StandardResponse(mockCartItem));
     });
   });

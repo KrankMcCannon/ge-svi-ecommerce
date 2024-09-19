@@ -125,7 +125,7 @@ describe('CartsService', () => {
         quantity: 2,
       };
 
-      const result = await service.addProductToCart(mockUser.id, dto);
+      const result = await service.createCartOrAddToCart(mockUser.id, dto);
 
       expect(result).toEqual(expect.objectContaining(mockCart));
     });
@@ -136,9 +136,9 @@ describe('CartsService', () => {
         quantity: 20,
       };
 
-      await expect(service.addProductToCart(mockUser.id, dto)).rejects.toThrow(
-        CustomException,
-      );
+      await expect(
+        service.createCartOrAddToCart(mockUser.id, dto),
+      ).rejects.toThrow(CustomException);
     });
 
     it('should handle errors and rollback transaction', async () => {
@@ -150,9 +150,9 @@ describe('CartsService', () => {
         CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND),
       );
 
-      await expect(service.addProductToCart(mockUser.id, dto)).rejects.toThrow(
-        CustomException,
-      );
+      await expect(
+        service.createCartOrAddToCart(mockUser.id, dto),
+      ).rejects.toThrow(CustomException);
     });
   });
 

@@ -3,8 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BaseRepository } from 'src/base.repository';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
+import { UserDTO } from 'src/users/dtos';
 import { EntityManager, Repository } from 'typeorm';
-import { CreateOrderDTO } from '../dtos/create-order.dto';
+import { OrderDTO, OrderItemDTO } from '../dtos';
 import { Order } from '../entities/order.entity';
 import { OrderStatus } from '../enum';
 
@@ -12,45 +13,104 @@ import { OrderStatus } from '../enum';
 export class OrdersRepository extends BaseRepository<Order> {
   constructor(
     @InjectRepository(Order)
-    private readonly orderRepo: Repository<Order>,
+    private readonly ordersRepo: Repository<Order>,
   ) {
-    super(orderRepo);
+    super(ordersRepo);
   }
 
-  async createOrder(createOrderDto: CreateOrderDTO): Promise<Order> {
+  /**
+   * Creates a new order.
+   *
+   * @param inputUser - User DTO.
+   * @param inputOrderItems - List of order items.
+   * @param manager - Optional transaction manager.
+   * @returns The created order.
+   * @throws CustomException if there is an error creating the order.
+   */
+  async createOrder(
+    inputUser: UserDTO,
+    inputOrderItems: OrderItemDTO[],
+    manager?: EntityManager,
+  ): Promise<OrderDTO> {
+    const repo = manager ? manager.getRepository(Order) : this.ordersRepo;
     try {
-      const order = this.orderRepo.create({
-        ...createOrderDto,
-        status: createOrderDto.status || OrderStatus.PENDING,
+      const user = UserDTO.toEntity(inputUser);
+      const orderItems = inputOrderItems.map(OrderItemDTO.toEntity);
+      const entity = repo.create({
+        user,
+        orderItems,
+        status: OrderStatus.CREATED,
+        createdAt: new Date(),
       });
-      return await this.orderRepo.save(order);
+      const order = await this.saveEntity(entity, manager);
+      return OrderDTO.fromEntity(order);
     } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(Errors.E_0028_ORDER_CREATION_ERROR, {
-        data: createOrderDto,
+        data: { orderItems: inputOrderItems },
         originalError: error,
       });
     }
   }
 
+  /**
+   * Finds an order by ID.
+   *
+   * @param orderId - Order ID.
+   * @param manager - Optional transaction manager.
+   * @returns The found order.
+   * @throws CustomException if the order is not found.
+   */
   async findOrderById(
     orderId: string,
     manager?: EntityManager,
-  ): Promise<Order> {
+  ): Promise<OrderDTO> {
+    const order = await this.findEntityById(orderId, manager);
+    return OrderDTO.fromEntity(order);
+  }
+
+  /**
+   * Finds all orders for a user.
+   *
+   * @param userId - User ID.
+   * @returns List of orders.
+   */
+  async findOrdersByUserId(userId: string): Promise<OrderDTO[]> {
+    const orders = await this.ordersRepo.find({
+      where: { user: { id: userId } },
+    });
+    return orders && orders.length > 0 ? orders.map(OrderDTO.fromEntity) : [];
+  }
+
+  /**
+   * Updates an order status.
+   *
+   * @param orderId - Order ID.
+   * @param status - New status.
+   * @param manager - Optional transaction manager.
+   * @returns The updated order.
+   * @throws CustomException if there is an error updating the order.
+   */
+  async updateOrderStatus(
+    orderId: string,
+    status: OrderStatus,
+    manager?: EntityManager,
+  ): Promise<OrderDTO> {
     try {
-      const repo = manager ? manager.getRepository(Order) : this.orderRepo;
-      const order = await repo.findOne({ where: { id: orderId } });
-      if (!order) {
-        throw CustomException.fromErrorEnum(
-          Errors.E_0029_ORDER_NOT_FOUND_ERROR,
-          {
-            data: { orderId },
-          },
-        );
-      }
-      return order;
+      const entity = OrderDTO.toEntity(
+        await this.findOrderById(orderId, manager),
+      );
+      entity.status = status;
+      const order = await this.saveEntity(entity, manager);
+      return OrderDTO.fromEntity(order);
     } catch (error) {
-      throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, {
-        data: { orderId },
+      if (error instanceof CustomException) {
+        throw error;
+      }
+      throw CustomException.fromErrorEnum(Errors.E_0030_ORDER_SAVE_ERROR, {
+        data: { id: orderId },
         originalError: error,
       });
     }

@@ -22,15 +22,23 @@ export class ProductsRepository extends BaseRepository<Product> {
    * Creates a new product.
    *
    * @param createProductDto DTO for creating a product.
+   * @param manager Optional transaction manager.
    * @returns The created product.
    * @throws CustomException if there is an error creating the product.
    */
-  async createProduct(createProductDto: CreateProductDto): Promise<ProductDTO> {
+  async createProduct(
+    createProductDto: CreateProductDto,
+    manager?: EntityManager,
+  ): Promise<ProductDTO> {
+    const repo = manager ? manager.getRepository(Product) : this.productRepo;
     try {
-      const createdProduct = this.productRepo.create(createProductDto);
-      const product = await this.saveEntity(createdProduct);
+      const createdProduct = repo.create(createProductDto);
+      const product = await this.saveEntity(createdProduct, manager);
       return ProductDTO.fromEntity(product);
     } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(
         Errors.E_0006_PRODUCT_CREATION_ERROR,
         {
@@ -100,6 +108,7 @@ export class ProductsRepository extends BaseRepository<Product> {
    * @param updateProductDto DTO for updating a product.
    * @param manager Optional transaction manager.
    * @returns The updated product.
+   * @throws CustomException if there is an error updating the product.
    */
   async updateProduct(
     id: string,
@@ -132,6 +141,7 @@ export class ProductsRepository extends BaseRepository<Product> {
    *
    * @param id Product ID.
    * @param manager Optional transaction manager.
+   * @throws CustomException if there is an error deleting the product.
    */
   async removeProduct(id: string, manager?: EntityManager): Promise<void> {
     const repo = manager ? manager.getRepository(Product) : this.productRepo;
@@ -152,7 +162,7 @@ export class ProductsRepository extends BaseRepository<Product> {
   /**
    * Saves a product.
    *
-   * @param product Product to save.
+   * @param inputProduct Product to save.
    * @param manager Optional transaction manager.
    * @returns The saved product.
    * @throws CustomException if there is an error saving the product.
@@ -161,12 +171,14 @@ export class ProductsRepository extends BaseRepository<Product> {
     inputProduct: ProductDTO,
     manager?: EntityManager,
   ): Promise<ProductDTO> {
-    const repo = manager ? manager.getRepository(Product) : this.productRepo;
     const product = ProductDTO.toEntity(inputProduct);
     try {
-      const savedProduct = await repo.save(product);
+      const savedProduct = await this.saveEntity(product, manager);
       return ProductDTO.fromEntity(savedProduct);
     } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(
         Errors.E_0006_PRODUCT_CREATION_ERROR,
         {

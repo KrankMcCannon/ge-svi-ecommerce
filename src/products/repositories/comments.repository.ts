@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CustomException } from 'src/config/custom-exception';
-import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { EntityManager, Repository } from 'typeorm';
@@ -24,23 +23,29 @@ export class CommentRepository extends BaseRepository<Comment> {
    * Adds a comment to a product.
    *
    * @param createCommentDto DTO for creating a comment.
-   * @param product The product being commented on.
+   * @param inputProduct The product being commented on.
+   * @param manager Optional transaction manager.
    * @returns The created comment.
+   * @throws CustomException if there is an error creating the comment.
    */
   async addComment(
     createCommentDto: CreateCommentDto,
     inputProduct: ProductDTO,
+    manager?: EntityManager,
   ): Promise<CommentDTO> {
+    const repo = manager ? manager.getRepository(Comment) : this.commentRepo;
     try {
       const product = ProductDTO.toEntity(inputProduct);
-      const createdComment = this.commentRepo.create({
+      const createdComment = repo.create({
         ...createCommentDto,
         product,
       });
-      const comment = await this.saveEntity(createdComment);
+      const comment = await this.saveEntity(createdComment, manager);
       return CommentDTO.fromEntity(comment);
     } catch (error) {
-      CustomLogger.error('Error adding comment', error);
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(
         Errors.E_0017_COMMENT_CREATION_ERROR,
         {
@@ -75,6 +80,7 @@ export class CommentRepository extends BaseRepository<Comment> {
    *
    * @param id Comment ID.
    * @param manager Optional transaction manager.
+   * @throws CustomException if the comment is not found.
    */
   async deleteComment(id: string, manager?: EntityManager): Promise<void> {
     const repo = manager ? manager.getRepository(Comment) : this.commentRepo;

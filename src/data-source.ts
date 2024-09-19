@@ -1,4 +1,5 @@
 import { DataSource } from 'typeorm';
+import { EnvironmentVariables } from './config/environment-variables';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -9,6 +10,6 @@ export const AppDataSource = new DataSource({
   database: 'ge-svi-ecommerce',
   entities: [__dirname + '/**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
-  synchronize: true,
+  synchronize: EnvironmentVariables.NODE_ENV === 'development',
   logging: true,
 });

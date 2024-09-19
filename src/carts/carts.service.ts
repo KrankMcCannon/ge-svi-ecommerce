@@ -60,7 +60,7 @@ export class CartsService {
    * @returns The updated or new cart item.
    * @throws CustomException if the product is not found or there is insufficient stock.
    */
-  async addProductToCart(
+  async createCartOrAddToCart(
     userId: string,
     addProductToCartDto: AddCartItemToCartDto,
   ): Promise<CartDTO> {
@@ -100,14 +100,12 @@ export class CartsService {
         );
 
       if (cartItemEntity) {
-        // Update quantity if cart item already exists
         cartItemEntity.quantity += addProductToCartDto.quantity;
         await this.cartItemRepository.saveCartItem(
           cartItemEntity,
           queryRunner.manager,
         );
       } else {
-        // Create a new cart item
         cartItemEntity = await this.cartItemRepository.createCartItem(
           cartEntity,
           productEntity,
@@ -159,12 +157,12 @@ export class CartsService {
    * @returns An array of cart items.
    */
   async findCartItems(
-    userId: string,
-    pagination: PaginationInfo,
+    cartId: string,
+    pagination?: PaginationInfo,
     sort?: string,
     filter?: any,
   ): Promise<CartItemDTO[]> {
-    return await this.cartItemRepository.findCartItems(userId, pagination, {
+    return await this.cartItemRepository.findCartItems(cartId, pagination, {
       sort,
       ...filter,
     });
@@ -236,7 +234,7 @@ export class CartsService {
     }
   }
 
-  async clearCart(cartId: string): Promise<void> {
-    await this.cartsRepository.clearCart(cartId);
+  async clearCart(cartId: string, manager?: EntityManager): Promise<void> {
+    await this.cartsRepository.clearCart(cartId, manager);
   }
 }
