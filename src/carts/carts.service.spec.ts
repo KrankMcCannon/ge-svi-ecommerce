@@ -3,13 +3,16 @@ import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { ProductDTO } from 'src/products/dtos/product.dto';
+import { Product } from 'src/products/entities';
 import { ProductsService } from 'src/products/products.service';
 import { UserDTO } from 'src/users/dtos/user.dto';
+import { User } from 'src/users/entities';
 import { UsersService } from 'src/users/users.service';
 import { DataSource, EntityManager, QueryRunner } from 'typeorm';
 import { CartsService } from './carts.service';
 import { AddCartItemToCartDto, CartItemDTO } from './dtos';
 import { CartDTO } from './dtos/cart.dto';
+import { CartItem } from './entities';
 import { CartItemsRepository } from './repositories/cart-items.repository';
 import { CartsRepository } from './repositories/carts.repository';
 
@@ -51,6 +54,7 @@ describe('CartsService', () => {
   };
 
   mockUser.cart = mockCart;
+  mockProduct.cartItems.push(mockCartItem);
   mockCart.cartItems.push(mockCartItem);
 
   const mockUserService = {
@@ -64,11 +68,16 @@ describe('CartsService', () => {
 
   const mockCartRepository = {
     addToCart: jest.fn().mockResolvedValue(mockCart),
-    findCart: jest.fn().mockResolvedValue(mockCart),
+    findCartById: jest.fn().mockResolvedValue(mockCart),
+    findCartByUserId: jest.fn().mockResolvedValue(mockCart),
+    deleteCart: jest.fn().mockResolvedValue(undefined),
+    clearCart: jest.fn().mockResolvedValue(undefined),
+    saveCart: jest.fn().mockResolvedValue(mockCart),
   };
 
   const mockCartItemsRepository = {
     findCartItemByCartIdAndProductId: jest.fn().mockResolvedValue(mockCartItem),
+    findCartItemById: jest.fn().mockResolvedValue(mockCartItem),
     findCartItems: jest.fn().mockResolvedValue([mockCartItem]),
     saveCartItem: jest.fn().mockResolvedValue(mockCartItem),
     removeCartItem: jest.fn().mockResolvedValue(undefined),
@@ -104,6 +113,44 @@ describe('CartsService', () => {
     }).compile();
 
     service = module.get<CartsService>(CartsService);
+
+    jest.spyOn(UserDTO, 'toEntity').mockImplementation((dto: UserDTO) => {
+      return {
+        id: dto.id,
+        email: dto.email,
+        name: dto.name,
+        role: dto.role,
+        orders: dto.orders,
+        cart: dto.cart,
+      } as User;
+    });
+
+    jest
+      .spyOn(ProductDTO, 'fromEntity')
+      .mockImplementation((entity: Product) => {
+        return {
+          id: entity.id,
+          name: entity.name,
+          description: entity.description,
+          price: entity.price,
+          stock: entity.stock,
+          cartItems: entity.cartItems,
+          comments: entity.comments,
+          orderItems: entity.orderItems,
+        } as ProductDTO;
+      });
+
+    jest
+      .spyOn(CartItemDTO, 'fromEntity')
+      .mockImplementation((entity: CartItem) => {
+        return {
+          id: entity.id,
+          product: entity.product,
+          cart: entity.cart,
+          quantity: entity.quantity,
+          price: entity.price,
+        } as CartItemDTO;
+      });
   });
 
   afterEach(() => {
@@ -114,11 +161,7 @@ describe('CartsService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('Add Product To Cart', () => {
-    afterEach(() => {
-      jest.clearAllMocks();
-    });
-
+  describe('createCartOrAddToCart', () => {
     it('should add a product to the cart', async () => {
       const dto: AddCartItemToCartDto = {
         productId: '1',
@@ -130,7 +173,7 @@ describe('CartsService', () => {
       expect(result).toEqual(expect.objectContaining(mockCart));
     });
 
-    it('should throw an error if insufficient stock', async () => {
+    it('should throw an error if there is insufficient stock', async () => {
       const dto: AddCartItemToCartDto = {
         productId: '1',
         quantity: 20,
@@ -146,8 +189,14 @@ describe('CartsService', () => {
         productId: '1',
         quantity: 20,
       };
+
       mockProductService.findProductById.mockRejectedValueOnce(
-        CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND),
+        CustomException.fromErrorEnum(Errors.E_0010_INSUFFICIENT_STOCK, {
+          data: {
+            stock: 1,
+          },
+          originalError: new Error('Insufficient stock'),
+        }),
       );
 
       await expect(
@@ -163,7 +212,7 @@ describe('CartsService', () => {
         pageSize: 10,
       });
 
-      const result = await service.findCartItems(mockUser.id, pagination);
+      const result = await service.findCartItems(mockCart.id, { pagination });
 
       expect(result).toEqual(
         expect.arrayContaining([expect.objectContaining(mockCartItem)]),
@@ -171,33 +220,43 @@ describe('CartsService', () => {
     });
   });
 
-  describe('removeProductFromCart', () => {
-    afterEach(() => {
-      jest.clearAllMocks();
-    });
-
-    it('should remove an item from the cart', async () => {
-      const result = await service.removeProductFromCart(
-        mockUser.id,
+  describe('removeItemFromCart', () => {
+    it('should remove a cart item', async () => {
+      const result = await service.removeItemFromCart(
+        mockCart.id,
         mockCartItem.id,
-        mockProduct.id,
       );
 
       expect(result).toBeUndefined();
     });
 
-    it('should handle errors and rollback transaction', async () => {
-      mockCartItemsRepository.findCartItemByCartIdAndProductId.mockRejectedValueOnce(
-        CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND),
+    it('should handle errors during cart item removal and rollback transaction', async () => {
+      mockCartItemsRepository.findCartItemById.mockRejectedValueOnce(
+        CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
+          data: {
+            cartItemId: 'invalid-cart-item-id',
+          },
+          originalError: new Error('Cart item not found'),
+        }),
       );
 
       await expect(
-        service.removeProductFromCart(
-          mockUser.id,
-          mockCartItem.id,
-          mockProduct.id,
-        ),
+        service.removeItemFromCart(mockCart.id, 'invalid-cart-item-id'),
       ).rejects.toThrow(CustomException);
+    });
+  });
+
+  describe('deleteCart', () => {
+    it('should delete the cart', async () => {
+      const result = await service.deleteCart(mockCart.id);
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('clearCart', () => {
+    it('should clear all items in the cart', async () => {
+      const result = await service.clearCart(mockCart.id);
+      expect(result).toBeUndefined();
     });
   });
 });

@@ -1,27 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { CustomException } from 'src/config/custom-exception';
+import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
-import { ProductDTO } from 'src/products/dtos';
-import { UserDTO } from 'src/users/dtos/user.dto';
+import { Product } from 'src/products/entities';
+import { User } from 'src/users/entities';
 import { EntityManager } from 'typeorm';
-import { CartDTO } from '../dtos';
 import { CartItemDTO } from '../dtos/cart-item.dto';
+import { Cart } from '../entities';
 import { CartItem } from '../entities/cartItem.entity';
 import { CartItemsRepository } from './cart-items.repository';
 
 describe('CartItemsRepository', () => {
   let repository: CartItemsRepository;
 
-  const mockUser: UserDTO = {
+  const mockUser: User = {
     id: '1',
     email: 'ex@mple.com',
     name: 'name',
     role: 'user',
     cart: null,
     orders: [],
+    createdAt: new Date(),
+    updatedAt: null,
+    password: 'password',
   };
 
-  const mockProduct: ProductDTO = {
+  const mockProduct: Product = {
     id: '1',
     name: 'Test Product',
     description: 'Test Description',
@@ -30,15 +35,19 @@ describe('CartItemsRepository', () => {
     cartItems: [],
     comments: [],
     orderItems: [],
+    createdAt: new Date(),
+    updatedAt: null,
   };
 
-  const mockCart: CartDTO = {
+  const mockCart: Cart = {
     id: '1',
     cartItems: [],
     user: mockUser,
+    createdAt: new Date(),
+    updatedAt: null,
   };
 
-  const mockCartItem: CartItemDTO = {
+  const mockCartItem: CartItem = {
     id: '1',
     product: mockProduct,
     cart: mockCart,
@@ -47,12 +56,14 @@ describe('CartItemsRepository', () => {
   };
 
   mockUser.cart = mockCart;
+  mockProduct.cartItems.push(mockCartItem);
   mockCart.cartItems.push(mockCartItem);
 
   const mockOrmRepository = {
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
     save: jest.fn().mockResolvedValue(mockCartItem),
     findOne: jest.fn().mockResolvedValue(mockCartItem),
+    create: jest.fn().mockReturnValue(mockCartItem),
     createQueryBuilder: jest.fn(() => ({
       innerJoinAndSelect: jest.fn().mockReturnThis(),
       innerJoin: jest.fn().mockReturnThis(),
@@ -65,7 +76,7 @@ describe('CartItemsRepository', () => {
     })),
     metadata: {
       target: 'CartItem',
-      primaryColumns: [{ propertyName: 'id' }, { propertyName: 'sort' }],
+      primaryColumns: [{ propertyName: 'id' }],
     },
   };
 
@@ -78,6 +89,15 @@ describe('CartItemsRepository', () => {
         target: 'CartItem',
         primaryColumns: [{ propertyName: 'id' }],
       },
+      createQueryBuilder: jest.fn(() => ({
+        innerJoinAndSelect: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([mockCartItem]),
+      })),
     }),
   } as unknown as EntityManager;
 
@@ -127,47 +147,56 @@ describe('CartItemsRepository', () => {
     expect(repository).toBeDefined();
   });
 
-  describe('Find Cart Items', () => {
-    it('should find cart items', async () => {
+  describe('createCartItem', () => {
+    it('should create a new cart item', async () => {
+      const result = await repository.createCartItem(mockCart, mockProduct, 2);
+
+      expect(result).toEqual(expect.objectContaining(mockCartItem));
+    });
+
+    it('should throw CustomException when creation fails', async () => {
+      mockOrmRepository.save.mockRejectedValueOnce(
+        CustomException.fromErrorEnum(Errors.E_0012_CART_ADD_ERROR),
+      );
+
+      await expect(
+        repository.createCartItem(mockCart, mockProduct, 2),
+      ).rejects.toThrow(CustomException);
+    });
+  });
+
+  describe('findCartItems', () => {
+    it('should retrieve all cart items for a cart ID', async () => {
       const query = {
-        name: 'name',
-        sort: 'sort',
+        pagination: new PaginationInfo(),
+        filter: 'name',
       };
-      const pagination = new PaginationInfo({
-        pageNumber: 0,
-        pageSize: 10,
-        paginationEnabled: true,
-      });
       const result = await repository.findCartItems(
-        mockUser.id,
-        pagination,
+        mockCart.id,
+        mockEntityManager,
         query,
       );
+
       expect(result).toEqual(
         expect.arrayContaining([expect.objectContaining(mockCartItem)]),
       );
     });
+  });
 
+  describe('findCartItemById', () => {
     it('should find a cart item by ID', async () => {
-      (
-        mockEntityManager.getRepository(CartItem).findOne as jest.Mock
-      ).mockResolvedValue(mockCartItem);
+      const result = await repository.findCartItemById(mockCartItem.id);
 
-      const result = await repository.findCartItemById(
-        mockCartItem.id,
-        mockEntityManager,
-      );
       expect(result).toEqual(expect.objectContaining(mockCartItem));
     });
 
-    it('throw custom exception if cart item is not found', async () => {
-      (
-        mockEntityManager.getRepository(CartItem).findOne as jest.Mock
-      ).mockResolvedValue(null);
-
-      await expect(
-        repository.findCartItemById('2', mockEntityManager),
-      ).rejects.toThrow();
+    it('should throw an exception if cart item is not found', async () => {
+      mockOrmRepository.findOne.mockRejectedValueOnce(
+        CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND),
+      );
+      await expect(repository.findCartItemById('invalid-id')).rejects.toThrow(
+        CustomException,
+      );
     });
   });
 

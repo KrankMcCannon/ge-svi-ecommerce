@@ -49,9 +49,10 @@ describe('CartsController', () => {
   mockCart.cartItems.push(mockCartItem);
 
   const mockCartsService = {
-    addProductToCart: jest.fn().mockResolvedValue(mockCartItem),
+    createCartOrAddToCart: jest.fn().mockResolvedValue(mockCart),
     findCartItems: jest.fn().mockResolvedValue([mockCartItem]),
-    removeProductFromCart: jest.fn().mockResolvedValue(mockCartItem),
+    removeItemFromCart: jest.fn().mockResolvedValue(undefined),
+    deleteCart: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {
@@ -74,40 +75,51 @@ describe('CartsController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('Add Cart Item to Cart', () => {
-    it('should return a cart', async () => {
-      const addProductToCartDto: AddCartItemToCartDto = {
+  describe('createCartOrAddToCart', () => {
+    it('should add a product to the cart and return it', async () => {
+      const addCartItemToCartDto: AddCartItemToCartDto = {
         productId: mockProduct.id,
         quantity: 2,
       };
       const req = { user: mockUser };
       const result = await controller.createCartOrAddToCart(
-        addProductToCartDto,
+        addCartItemToCartDto,
         req,
       );
-      expect(result).toEqual(new StandardResponse(mockCartItem));
+
+      expect(result).toEqual(new StandardResponse(mockCart));
+      expect(mockCartsService.createCartOrAddToCart).toHaveBeenCalledWith(
+        req.user.id,
+        addCartItemToCartDto,
+      );
     });
   });
 
-  describe('Find Cart Items from Cart', () => {
+  describe('findCartItems', () => {
     it('should return a list of cart items', async () => {
-      const req = { user: mockUser };
-      const pagination = new PaginationInfo({
-        pageNumber: 0,
-        pageSize: 10,
-      });
-      const result = await controller.findCartItems(req, pagination);
+      const pagination = new PaginationInfo({ pageNumber: 1, pageSize: 10 });
+      const result = await controller.findCartItems(mockCart.id, pagination);
+
       expect(result).toEqual(new StandardList([mockCartItem], 1, pagination));
     });
   });
 
-  describe('Remove Cart Item from Cart', () => {
-    it('should return a cart item', async () => {
-      const req = { user: mockUser };
-      const body = {
-        productId: mockProduct.id,
-      };
-      const result = await controller.removeFromCart(req, mockCart.id, body);
+  describe('removeItemFromCart', () => {
+    it('should remove an item from the cart', async () => {
+      const result = await controller.removeItemFromCart(
+        { user: mockUser },
+        mockCart.id,
+        mockCartItem.id,
+      );
+
+      expect(result).toEqual(new StandardResponse(true));
+    });
+  });
+
+  describe('deleteCart', () => {
+    it('should delete a cart and return success', async () => {
+      const result = await controller.deleteCart(mockCart.id);
+
       expect(result).toEqual(new StandardResponse(true));
     });
   });
