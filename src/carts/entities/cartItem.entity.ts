@@ -17,19 +17,29 @@ export class CartItem {
 
   @ApiProperty({ description: 'The cart that owns this cart item' })
   @ManyToOne(() => Cart, (cart) => cart.cartItems, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'cartId' })
+  @JoinColumn()
   cart: Cart;
 
   @ApiProperty({ description: 'The product associated with this cart item' })
-  @ManyToOne(() => Product, (product) => product.cartItems)
-  @JoinColumn({ name: 'productId' })
+  @ManyToOne(() => Product, (product) => product.cartItems, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn()
   product: Product;
 
   @Column('int')
-  @ApiProperty({ description: 'The quantity of the product in the cart' })
+  @ApiProperty({
+    description: 'The quantity of the product in the cart',
+    minimum: 1,
+    type: 'number',
+  })
   quantity: number;
 
-  @Column('int')
-  @ApiProperty({ description: 'The price of the product in the cart' })
+  @Column('float')
+  @ApiProperty({
+    description: 'The price of the product in the cart',
+    minimum: 1,
+    type: 'number',
+  })
   price: number;
 }

@@ -3,13 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BaseRepository } from 'src/base.repository';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
-import {
-  CreateUserDto,
-  UpdateUserDto,
-  UserWithPasswordDTO,
-} from 'src/users/dtos';
+import { CreateUserDto, UpdateUserDto } from 'src/users/dtos';
 import { EntityManager, Repository } from 'typeorm';
-import { UserDTO } from './dtos/user.dto';
 import { User } from './entities';
 
 @Injectable()
@@ -25,12 +20,11 @@ export class UserRepository extends BaseRepository<User> {
    * Finds a user by email.
    *
    * @param email User's email.
-   * @returns The found user or null.
+   * @returns The found user.
    */
-  async findByEmail(email: string): Promise<UserWithPasswordDTO | null> {
+  async findByEmail(email: string): Promise<User> {
     try {
-      const user = await this.userRepo.findOne({ where: { email } });
-      return user ? UserWithPasswordDTO.fromEntity(user) : null;
+      return await this.userRepo.findOne({ where: { email } });
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0025_USER_NOT_FOUND, {
         data: { email },
@@ -49,12 +43,11 @@ export class UserRepository extends BaseRepository<User> {
   async createUser(
     createUserDto: CreateUserDto,
     manager?: EntityManager,
-  ): Promise<UserDTO> {
+  ): Promise<User> {
     const repo = manager ? manager.getRepository(User) : this.userRepo;
     try {
       const createdUser = repo.create(createUserDto);
-      const user = await this.saveEntity(createdUser, manager);
-      return UserDTO.fromEntity(user);
+      return await this.saveEntity(createdUser, manager);
     } catch (error) {
       if (error instanceof CustomException) {
         throw error;
@@ -73,30 +66,27 @@ export class UserRepository extends BaseRepository<User> {
    * @param manager Optional transaction manager.
    * @returns The found user.
    */
-  async findById(id: string, manager?: EntityManager): Promise<UserDTO> {
-    const user = await this.findEntityById(id, manager);
-    return UserDTO.fromEntity(user);
+  async findById(id: string, manager?: EntityManager): Promise<User> {
+    return await this.findEntityById(id, manager);
   }
 
   /**
    * Updates a user.
    *
-   * @param inputUser User entity to update.
+   * @param user User entity to update.
    * @param updateUserDto DTO for updating a user.
    * @param manager Optional transaction manager.
    * @returns The updated user.
    */
   async updateUser(
-    inputUser: UserDTO,
+    user: User,
     updateUserDto: UpdateUserDto,
     manager?: EntityManager,
-  ): Promise<UserDTO> {
+  ): Promise<User> {
     const repo = manager ? manager.getRepository(User) : this.userRepo;
-    const user = UserDTO.toEntity(inputUser);
     try {
       await repo.update(user.id, updateUserDto);
-      const updatedUser = await this.findEntityById(user.id, manager);
-      return UserDTO.fromEntity(updatedUser);
+      return await this.findEntityById(user.id, manager);
     } catch (error) {
       if (error instanceof CustomException) {
         throw error;
@@ -137,18 +127,13 @@ export class UserRepository extends BaseRepository<User> {
   /**
    * Saves a user.
    *
-   * @param inputUser User entity to save.
+   * @param user User entity to save.
    * @param manager Optional transaction manager.
    * @returns The saved user.
    */
-  async saveUser(
-    inputUser: UserDTO,
-    manager?: EntityManager,
-  ): Promise<UserDTO> {
-    const user = UserDTO.toEntity(inputUser);
+  async saveUser(user: User, manager?: EntityManager): Promise<User> {
     try {
-      const savedUser = await this.saveEntity(user, manager);
-      return UserDTO.fromEntity(savedUser);
+      return await this.saveEntity(user, manager);
     } catch (error) {
       if (error instanceof CustomException) {
         throw error;

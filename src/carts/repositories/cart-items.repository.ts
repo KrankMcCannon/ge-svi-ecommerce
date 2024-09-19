@@ -6,7 +6,6 @@ import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { Product } from 'src/products/entities';
 import { EntityManager, Repository } from 'typeorm';
-import { CartItemDTO } from '../dtos/cart-item.dto';
 import { Cart } from '../entities';
 import { CartItem } from '../entities/cartItem.entity';
 
@@ -33,13 +32,26 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
     product: Product,
     quantity: number,
     manager?: EntityManager,
-  ): Promise<CartItemDTO> {
+  ): Promise<CartItem> {
     const repo = manager ? manager.getRepository(CartItem) : this.cartItemRepo;
 
-    const cartItem = repo.create({ cart, product, quantity });
-    const savedCartItem = await repo.save(cartItem);
-
-    return CartItemDTO.fromEntity(savedCartItem);
+    try {
+      const cartItem = repo.create({
+        cart,
+        product,
+        quantity,
+        price: product.price,
+      });
+      return await this.saveEntity(cartItem, manager);
+    } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
+      CustomException.fromErrorEnum(Errors.E_0012_CART_ADD_ERROR, {
+        data: { cart, product, quantity },
+        originalError: error,
+      });
+    }
   }
 
   /**
@@ -53,7 +65,7 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
     cartId: string,
     pagination?: PaginationInfo,
     query?: any,
-  ): Promise<CartItemDTO[]> {
+  ): Promise<CartItem[]> {
     const qb = this.cartItemRepo.createQueryBuilder('cartItem');
     qb.innerJoinAndSelect('cartItem.product', 'product')
       .innerJoin('cartItem.cart', 'cart')
@@ -63,8 +75,7 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
     this.applySorting(qb, query.sort);
     this.applyPagination(qb, pagination);
 
-    const cartItems = await qb.getMany();
-    return cartItems.map(CartItemDTO.fromEntity);
+    return await qb.getMany();
   }
 
   /**
@@ -78,21 +89,19 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
   async findCartItemById(
     cartItemId: string,
     manager?: EntityManager,
-  ): Promise<CartItemDTO | null> {
-    const cartItem = await this.findEntityById(cartItemId, manager);
-    return cartItem ? CartItemDTO.fromEntity(cartItem) : null;
+  ): Promise<CartItem | null> {
+    return await this.findEntityById(cartItemId, manager);
   }
 
   async findCartItemByCartIdAndProductId(
     cartId: string,
     productId: string,
     manager?: EntityManager,
-  ): Promise<CartItemDTO | null> {
+  ): Promise<CartItem | null> {
     const repo = manager ? manager.getRepository(CartItem) : this.repo;
-    const cartItem = await repo.findOne({
+    return await repo.findOne({
       where: { cart: { id: cartId }, product: { id: productId } },
     });
-    return cartItem ? CartItemDTO.fromEntity(cartItem) : null;
   }
 
   /**
@@ -121,18 +130,16 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
   /**
    * Saves a cart item.
    *
-   * @param inputCartItem Cart item to save.
+   * @param cartItem Cart item to save.
    * @returns The saved cart item.
    */
   async saveCartItem(
-    inputCartItem: CartItemDTO,
+    cartItem: CartItem,
     manager?: EntityManager,
-  ): Promise<CartItemDTO> {
+  ): Promise<CartItem> {
     const repo = manager ? manager.getRepository(CartItem) : this.repo;
-    const cartItem = CartItemDTO.toEntity(inputCartItem);
     try {
-      const savedCartItem = await repo.save(cartItem);
-      return CartItemDTO.fromEntity(savedCartItem);
+      return await repo.save(cartItem);
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0012_CART_ADD_ERROR, {
         data: { cartItem },

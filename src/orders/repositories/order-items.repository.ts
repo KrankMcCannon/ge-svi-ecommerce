@@ -4,7 +4,6 @@ import { BaseRepository } from 'src/base.repository';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
 import { EntityManager, Repository } from 'typeorm';
-import { OrderItemDTO } from '../dtos';
 import { OrderItem } from '../entities/order-item.entity';
 
 @Injectable()
@@ -19,27 +18,26 @@ export class OrderItemsRepository extends BaseRepository<OrderItem> {
   /**
    * Creates a new order item.
    *
-   * @param dto - Order item DTO.
+   * @param inputOrderItem - Order item entity.
    * @param manager - Optional transaction manager.
    * @returns The newly created order item.
    * @throws CustomException if there is an error creating the order item.
    */
   async createOrderItem(
-    dto: OrderItemDTO,
+    inputOrderItem: OrderItem,
     manager?: EntityManager,
   ): Promise<OrderItem> {
     const repo = manager
       ? manager.getRepository(OrderItem)
       : this.orderItemsRepo;
     try {
-      const entity = OrderItemDTO.toEntity(dto);
-      const orderItem = repo.create(entity);
+      const orderItem = repo.create(inputOrderItem);
       return await this.saveEntity(orderItem, manager);
     } catch (error) {
       throw CustomException.fromErrorEnum(
         Errors.E_0032_ORDER_ITEM_CREATION_ERROR,
         {
-          data: { dto },
+          data: { inputOrderItem },
           originalError: error,
         },
       );
@@ -53,13 +51,10 @@ export class OrderItemsRepository extends BaseRepository<OrderItem> {
    * @returns List of order items.
    * @throws CustomException if there is an error finding the order items.
    */
-  async findOrderItemsByOrderId(orderId: string): Promise<OrderItemDTO[]> {
-    const entities = await this.orderItemsRepo.find({
+  async findOrderItemsByOrderId(orderId: string): Promise<OrderItem[]> {
+    return await this.orderItemsRepo.find({
       where: { order: { id: orderId } },
     });
-    return entities && entities.length > 0
-      ? entities.map(OrderItemDTO.fromEntity)
-      : [];
   }
 
   /**
@@ -69,8 +64,7 @@ export class OrderItemsRepository extends BaseRepository<OrderItem> {
    * @returns The found order item.
    * @throws CustomException if the order item is not found.
    */
-  async findOrderItemById(orderItemId: string): Promise<OrderItemDTO> {
-    const orderItem = await this.findEntityById(orderItemId);
-    return OrderItemDTO.fromEntity(orderItem);
+  async findOrderItemById(orderItemId: string): Promise<OrderItem> {
+    return await this.findEntityById(orderItemId);
   }
 }

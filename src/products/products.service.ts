@@ -24,15 +24,22 @@ export class ProductsService {
    * @returns The created product.
    */
   async createProduct(createProductDto: CreateProductDto): Promise<ProductDTO> {
-    const existingProduct = await this.productsRepo.findByName(
-      createProductDto.name,
-    );
-    if (existingProduct) {
-      throw CustomException.fromErrorEnum(Errors.E_0011_DUPLICATE_PRODUCT, {
-        data: { name: createProductDto.name },
-      });
+    try {
+      await this.productsRepo.findByName(createProductDto.name);
+      const product = await this.productsRepo.createProduct(createProductDto);
+      return ProductDTO.fromEntity(product);
+    } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
+      throw CustomException.fromErrorEnum(
+        Errors.E_0006_PRODUCT_CREATION_ERROR,
+        {
+          data: { product: createProductDto },
+          originalError: error,
+        },
+      );
     }
-    return await this.productsRepo.createProduct(createProductDto);
   }
 
   /**
@@ -48,7 +55,13 @@ export class ProductsService {
     sort: string,
     filter: any,
   ): Promise<ProductDTO[]> {
-    return await this.productsRepo.findAll({ sort, ...filter }, pagination);
+    const products = await this.productsRepo.findAll(
+      { sort, ...filter },
+      pagination,
+    );
+    return products && products.length > 0
+      ? products.map(ProductDTO.fromEntity)
+      : [];
   }
 
   /**
@@ -62,12 +75,8 @@ export class ProductsService {
     id: string,
     manager?: EntityManager,
   ): Promise<ProductDTO> {
-    if (!id) {
-      throw CustomException.fromErrorEnum(Errors.E_0004_VALIDATION_KO, {
-        data: { id },
-      });
-    }
-    return await this.productsRepo.findOneById(id, manager);
+    const product = await this.productsRepo.findOneById(id, manager);
+    return ProductDTO.fromEntity(product);
   }
 
   /**
@@ -92,7 +101,7 @@ export class ProductsService {
         queryRunner.manager,
       );
       await queryRunner.commitTransaction();
-      return updatedProduct;
+      return ProductDTO.fromEntity(updatedProduct);
     } catch (error) {
       await queryRunner.rollbackTransaction();
       if (error instanceof CustomException) {
@@ -145,7 +154,9 @@ export class ProductsService {
     inputProduct: ProductDTO,
     manager?: EntityManager,
   ): Promise<ProductDTO> {
-    return await this.productsRepo.saveProduct(inputProduct, manager);
+    const entity = ProductDTO.toEntity(inputProduct);
+    const product = await this.productsRepo.saveProduct(entity, manager);
+    return ProductDTO.fromEntity(product);
   }
 
   /**
@@ -155,8 +166,14 @@ export class ProductsService {
    * @returns The created comment.
    */
   async addComment(createCommentDto: CreateCommentDto): Promise<CommentDTO> {
-    const product = await this.findProductById(createCommentDto.productId);
-    return await this.commentRepo.addComment(createCommentDto, product);
+    const product = await this.productsRepo.findOneById(
+      createCommentDto.productId,
+    );
+    const comment = await this.commentRepo.addComment(
+      createCommentDto,
+      product,
+    );
+    return CommentDTO.fromEntity(comment);
   }
 
   /**
@@ -171,6 +188,12 @@ export class ProductsService {
     paginationInfo: PaginationInfo,
   ): Promise<CommentDTO[]> {
     await this.findProductById(productId);
-    return await this.commentRepo.findAllComments(productId, paginationInfo);
+    const comments = await this.commentRepo.findAllComments(
+      productId,
+      paginationInfo,
+    );
+    return comments && comments.length > 0
+      ? comments.map(CommentDTO.fromEntity)
+      : [];
   }
 }

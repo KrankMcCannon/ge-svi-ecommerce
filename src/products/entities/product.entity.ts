@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { OrderItem } from 'src/orders/entities/order-item.entity';
 import {
   Column,
   CreateDateColumn,
@@ -9,7 +10,6 @@ import {
 } from 'typeorm';
 import { CartItem } from '../../carts/entities/cartItem.entity';
 import { Comment } from './comment.entity';
-import { OrderItem } from 'src/orders/entities/order-item.entity';
 
 @Entity('products')
 export class Product {
@@ -25,20 +25,19 @@ export class Product {
   @ApiProperty({ description: 'Description of the product' })
   description: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('float')
   @ApiProperty({
     description: 'Price of the product',
     type: 'number',
-    minimum: 0,
-    format: 'decimal',
+    minimum: 1,
   })
   price: number;
 
-  @Column('int8')
+  @Column('int')
   @ApiProperty({
     description: 'Stock quantity of the product',
     minimum: 1,
-    format: 'number',
+    type: 'number',
   })
   stock: number;
 

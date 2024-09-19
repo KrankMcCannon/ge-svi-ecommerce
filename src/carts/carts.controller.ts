@@ -31,7 +31,7 @@ import { AddCartItemToCartDto, CartDTO, CartItemDTO } from './dtos';
 export class CartsController {
   constructor(private readonly cartsService: CartsService) {}
 
-  @Post('cart')
+  @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('user', 'admin')
   @ApiOperation({ summary: 'Add a product to the cart' })
@@ -44,15 +44,14 @@ export class CartsController {
     @Body() addCartItemToCartDto: AddCartItemToCartDto,
     @Request() req: any,
   ): Promise<StandardResponse<CartDTO>> {
-    const userId = req.user.id;
     const cart = await this.cartsService.createCartOrAddToCart(
-      userId,
+      req.user.id,
       addCartItemToCartDto,
     );
     return new StandardResponse(cart);
   }
 
-  @Get('cart/:id')
+  @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('user', 'admin')
   @ApiOperation({ summary: 'Get a list of products in the cart' })
@@ -77,7 +76,7 @@ export class CartsController {
     return new StandardList(cartItems, cartItems.length, paginationInfo);
   }
 
-  @Delete('cart/:id')
+  @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('user', 'admin')
   @ApiOperation({ summary: 'Remove a product from the cart' })

@@ -26,24 +26,29 @@ export class AuthService {
     inputEmail: string,
     inputPassword: string,
   ): Promise<UserDTO> {
-    const user = await this.usersService.findByEmail(inputEmail);
-    if (!user) {
-      throw CustomException.fromErrorEnum(Errors.E_0025_USER_NOT_FOUND, {
-        data: { email: inputEmail },
-      });
-    }
+    try {
+      const user = await this.usersService.findByEmail(inputEmail);
 
-    const isPasswordValid = await bcrypt.compare(
-      inputPassword.trim(),
-      user.password,
-    );
-    if (!isPasswordValid) {
+      const isPasswordValid = await bcrypt.compare(
+        inputPassword.trim(),
+        user.password,
+      );
+      if (!isPasswordValid) {
+        throw CustomException.fromErrorEnum(Errors.E_0027_INVALID_USER, {
+          data: { email: inputEmail, password: inputPassword },
+        });
+      }
+
+      return UserDTO.fromPasswordDTO(user);
+    } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(Errors.E_0027_INVALID_USER, {
         data: { email: inputEmail, password: inputPassword },
+        originalError: error,
       });
     }
-
-    return UserDTO.fromPasswordDTO(user);
   }
 
   /**
@@ -67,15 +72,17 @@ export class AuthService {
    * @throws CustomException if the user already exists.
    */
   async register(createUserDto: CreateUserDto): Promise<UserDTO> {
-    const existingUser = await this.usersService.findByEmail(
-      createUserDto.email,
-    );
-    if (existingUser) {
+    try {
+      await this.usersService.findByEmail(createUserDto.email);
+      return await this.usersService.create(createUserDto);
+    } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(Errors.E_0026_DUPLICATE_USER, {
         data: { email: createUserDto.email },
+        originalError: error,
       });
     }
-
-    return await this.usersService.create(createUserDto);
   }
 }

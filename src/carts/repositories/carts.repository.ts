@@ -3,10 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BaseRepository } from 'src/base.repository';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
-import { ProductDTO } from 'src/products/dtos';
+import { Product } from 'src/products/entities';
 import { User } from 'src/users/entities';
 import { EntityManager, Repository } from 'typeorm';
-import { CartDTO } from '../dtos/cart.dto';
 import { Cart } from '../entities';
 import { CartItemsRepository } from './cart-items.repository';
 
@@ -27,13 +26,11 @@ export class CartsRepository extends BaseRepository<Cart> {
    * @param manager Optional transaction manager.
    * @returns The newly created cart.
    */
-  async createCart(user: User, manager?: EntityManager): Promise<CartDTO> {
-    const cartRepo = manager ? manager.getRepository(Cart) : this.cartRepo;
+  async createCart(user: User, manager?: EntityManager): Promise<Cart> {
+    const repo = manager ? manager.getRepository(Cart) : this.cartRepo;
 
-    const cart = cartRepo.create({ user });
-    const savedCart = await cartRepo.save(cart);
-
-    return CartDTO.fromEntity(savedCart);
+    const cart = repo.create({ user });
+    return await repo.save(cart);
   }
 
   /**
@@ -47,17 +44,16 @@ export class CartsRepository extends BaseRepository<Cart> {
    */
   async addToCart(
     userId: string,
-    product: ProductDTO,
+    product: Product,
     quantity: number,
     manager?: EntityManager,
-  ): Promise<CartDTO> {
-    const cartRepo = manager ? manager.getRepository(Cart) : this.cartRepo;
+  ): Promise<Cart> {
+    const repo = manager ? manager.getRepository(Cart) : this.cartRepo;
 
-    let cart = await cartRepo.findOne({ where: { user: { id: userId } } });
+    let cart = await repo.findOne({ where: { user: { id: userId } } });
 
     if (!cart) {
-      cart = cartRepo.create({ user: { id: userId } });
-      await cartRepo.save(cart);
+      cart = repo.create({ user: { id: userId } });
     }
 
     let cartItem = await this.cartItemRepo.findCartItemByCartIdAndProductId(
@@ -69,12 +65,30 @@ export class CartsRepository extends BaseRepository<Cart> {
     if (cartItem) {
       cartItem.quantity += quantity;
     } else {
-      cartItem = await this.cartItemRepo.saveCartItem(cartItem, manager);
+      cartItem = await this.cartItemRepo.createCartItem(
+        cart,
+        product,
+        quantity,
+        manager,
+      );
     }
 
-    await cartRepo.save(cart);
+    return await repo.save(cart);
+  }
 
-    return CartDTO.fromEntity(cart);
+  /**
+   * Retrieves a user's cart.
+   *
+   * @param userId User's ID.
+   * @param manager Optional transaction manager.
+   * @returns The user's cart or null if it doesn't exist.
+   */
+  async findCart(
+    userId: string,
+    manager?: EntityManager,
+  ): Promise<Cart | null> {
+    const repo = manager ? manager.getRepository(Cart) : this.cartRepo;
+    return await repo.findOne({ where: { user: { id: userId } } });
   }
 
   /**
@@ -83,13 +97,10 @@ export class CartsRepository extends BaseRepository<Cart> {
    * @param userId User's ID.
    * @param manager Optional transaction manager.
    * @returns The user's cart.
+   * @throws CustomException if the cart is not found.
    */
-  async findCart(
-    userId: string,
-    manager?: EntityManager,
-  ): Promise<CartDTO | null> {
-    const cart = await this.findEntityById(userId, manager);
-    return cart ? CartDTO.fromEntity(cart) : null;
+  async findCartOrFail(userId: string, manager?: EntityManager): Promise<Cart> {
+    return await this.findEntityById(userId, manager);
   }
 
   /**
@@ -126,12 +137,11 @@ export class CartsRepository extends BaseRepository<Cart> {
    * @param manager Optional transaction manager.
    * @returns The saved cart entity as a DTO.
    */
-  async saveCart(cart: Cart, manager?: EntityManager): Promise<CartDTO> {
+  async saveCart(cart: Cart, manager?: EntityManager): Promise<Cart> {
     const repo = manager ? manager.getRepository(Cart) : this.cartRepo;
 
     try {
-      const savedCart = await repo.save(cart);
-      return CartDTO.fromEntity(savedCart);
+      return await repo.save(cart);
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0012_CART_ADD_ERROR, {
         data: { cart },

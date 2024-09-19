@@ -10,6 +10,7 @@ import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { AddCartItemToCartDto, CartItemDTO } from './dtos';
 import { CartDTO } from './dtos/cart.dto';
+import { Cart, CartItem } from './entities';
 import { CartItemsRepository } from './repositories/cart-items.repository';
 import { CartsRepository } from './repositories/carts.repository';
 
@@ -39,17 +40,16 @@ export class CartsService {
     }
 
     const userEntity = UserDTO.toEntity(user);
-    const cartEntity = await this.cartsRepository.createCart(userEntity);
-    const cart = CartDTO.toEntity(cartEntity);
+    const cart = await this.cartsRepository.createCart(userEntity);
 
-    let savedCart: CartDTO;
+    let savedCart: Cart;
     if (manager) {
-      savedCart = await manager.save(cartEntity);
+      savedCart = await manager.save(cart);
     } else {
       savedCart = await this.cartsRepository.saveCart(cart);
     }
 
-    return savedCart;
+    return CartDTO.fromEntity(savedCart);
   }
 
   /**
@@ -90,43 +90,39 @@ export class CartsService {
       if (!cart) {
         cart = await this.cartsRepository.createCart(user, queryRunner.manager);
       }
-      const cartEntity = CartDTO.toEntity(cart);
 
-      let cartItemEntity =
+      let cartItem =
         await this.cartItemRepository.findCartItemByCartIdAndProductId(
           cart.id,
           product.id,
           queryRunner.manager,
         );
 
-      if (cartItemEntity) {
-        cartItemEntity.quantity += addProductToCartDto.quantity;
+      if (cartItem) {
+        cartItem.quantity += addProductToCartDto.quantity;
         await this.cartItemRepository.saveCartItem(
-          cartItemEntity,
+          cartItem,
           queryRunner.manager,
         );
       } else {
-        cartItemEntity = await this.cartItemRepository.createCartItem(
-          cartEntity,
+        cartItem = await this.cartItemRepository.createCartItem(
+          cart,
           productEntity,
           addProductToCartDto.quantity,
-        );
-        await this.cartItemRepository.saveCartItem(
-          cartItemEntity,
           queryRunner.manager,
         );
-        const cartItem = CartItemDTO.toEntity(cartItemEntity);
-        cartEntity.cartItems.push(cartItem);
+        cart.cartItems = [] as CartItem[];
+        cart.cartItems.push(cartItem);
       }
 
-      await this.cartsRepository.saveCart(cartEntity, queryRunner.manager);
+      await this.cartsRepository.saveCart(cart, queryRunner.manager);
 
       product.stock -= addProductToCartDto.quantity;
       await this.productsService.saveProduct(product, queryRunner.manager);
 
       await queryRunner.commitTransaction();
 
-      return await this.cartsRepository.findCart(userId);
+      return await this.cartsRepository.findCart(userId, queryRunner.manager);
     } catch (error) {
       await queryRunner.rollbackTransaction();
       if (error instanceof CustomException) {
@@ -145,9 +141,11 @@ export class CartsService {
    *
    * @param userId User's ID.
    * @returns User's cart.
+   * @throws NotFoundException if the cart is not found.
    */
-  async findCart(userId: string): Promise<CartDTO> {
-    return await this.cartsRepository.findCart(userId);
+  async findCartOrFail(userId: string): Promise<CartDTO> {
+    const cart = await this.cartsRepository.findCartOrFail(userId);
+    return CartDTO.fromEntity(cart);
   }
 
   /**
@@ -162,10 +160,15 @@ export class CartsService {
     sort?: string,
     filter?: any,
   ): Promise<CartItemDTO[]> {
-    return await this.cartItemRepository.findCartItems(cartId, pagination, {
-      sort,
-      ...filter,
-    });
+    const cartItems = await this.cartItemRepository.findCartItems(
+      cartId,
+      pagination,
+      {
+        sort,
+        ...filter,
+      },
+    );
+    return cartItems.map(CartItemDTO.fromEntity);
   }
 
   /**
@@ -173,7 +176,7 @@ export class CartsService {
    * @param userId User's ID.
    * @param cartItemId Cart item ID.
    * @param productId Product ID.
-   * @throws NotFoundException if the cart item is not found.
+   * @throws CustomException if the cart item is not found.
    */
   async removeProductFromCart(
     userId: string,
@@ -185,7 +188,7 @@ export class CartsService {
     await queryRunner.startTransaction();
 
     try {
-      const cart = await this.cartsRepository.findCart(
+      const cart = await this.cartsRepository.findCartOrFail(
         userId,
         queryRunner.manager,
       );

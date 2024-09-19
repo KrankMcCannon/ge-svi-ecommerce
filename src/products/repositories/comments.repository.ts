@@ -5,10 +5,8 @@ import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { EntityManager, Repository } from 'typeorm';
 import { BaseRepository } from '../../base.repository';
-import { CommentDTO } from '../dtos';
 import { CreateCommentDto } from '../dtos/create-comment.dto';
-import { ProductDTO } from '../dtos/product.dto';
-import { Comment } from '../entities/comment.entity';
+import { Comment, Product } from '../entities';
 
 @Injectable()
 export class CommentRepository extends BaseRepository<Comment> {
@@ -23,25 +21,23 @@ export class CommentRepository extends BaseRepository<Comment> {
    * Adds a comment to a product.
    *
    * @param createCommentDto DTO for creating a comment.
-   * @param inputProduct The product being commented on.
+   * @param product The product being commented on.
    * @param manager Optional transaction manager.
    * @returns The created comment.
    * @throws CustomException if there is an error creating the comment.
    */
   async addComment(
     createCommentDto: CreateCommentDto,
-    inputProduct: ProductDTO,
+    product: Product,
     manager?: EntityManager,
-  ): Promise<CommentDTO> {
+  ): Promise<Comment> {
     const repo = manager ? manager.getRepository(Comment) : this.commentRepo;
     try {
-      const product = ProductDTO.toEntity(inputProduct);
       const createdComment = repo.create({
         ...createCommentDto,
         product,
       });
-      const comment = await this.saveEntity(createdComment, manager);
-      return CommentDTO.fromEntity(comment);
+      return await this.saveEntity(createdComment, manager);
     } catch (error) {
       if (error instanceof CustomException) {
         throw error;
@@ -66,13 +62,12 @@ export class CommentRepository extends BaseRepository<Comment> {
   async findAllComments(
     productId: string,
     pagination: PaginationInfo,
-  ): Promise<CommentDTO[]> {
+  ): Promise<Comment[]> {
     const qb = this.commentRepo.createQueryBuilder('comment');
     qb.where('comment.productId = :productId', { productId });
     qb.orderBy('comment.createdAt', 'DESC');
     this.applyPagination(qb, pagination);
-    const comments = await qb.getMany();
-    return comments.map(CommentDTO.fromEntity);
+    return await qb.getMany();
   }
 
   /**

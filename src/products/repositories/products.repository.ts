@@ -29,12 +29,11 @@ export class ProductsRepository extends BaseRepository<Product> {
   async createProduct(
     createProductDto: CreateProductDto,
     manager?: EntityManager,
-  ): Promise<ProductDTO> {
+  ): Promise<Product> {
     const repo = manager ? manager.getRepository(Product) : this.productRepo;
     try {
       const createdProduct = repo.create(createProductDto);
-      const product = await this.saveEntity(createdProduct, manager);
-      return ProductDTO.fromEntity(product);
+      return await this.saveEntity(createdProduct, manager);
     } catch (error) {
       if (error instanceof CustomException) {
         throw error;
@@ -56,14 +55,13 @@ export class ProductsRepository extends BaseRepository<Product> {
    * @param pagination Pagination information.
    * @returns List of products.
    */
-  async findAll(query: any, pagination: PaginationInfo): Promise<ProductDTO[]> {
+  async findAll(query: any, pagination: PaginationInfo): Promise<Product[]> {
     const qb = this.productRepo.createQueryBuilder('product');
 
     this.applyFilters(qb, query);
     this.applySorting(qb, query.sort, 'product.');
     this.applyPagination(qb, pagination);
-    const products = await qb.getMany();
-    return products.map(ProductDTO.fromEntity);
+    return await qb.getMany();
   }
 
   /**
@@ -74,12 +72,8 @@ export class ProductsRepository extends BaseRepository<Product> {
    * @returns The found product.
    * @throws CustomException if the product is not found.
    */
-  async findOneById(
-    id: string,
-    manager?: EntityManager,
-  ): Promise<ProductDTO | null> {
-    const product = await this.findEntityById(id, manager);
-    return product ? ProductDTO.fromEntity(product) : null;
+  async findOneById(id: string, manager?: EntityManager): Promise<Product> {
+    return await this.findEntityById(id, manager);
   }
 
   /**
@@ -89,10 +83,9 @@ export class ProductsRepository extends BaseRepository<Product> {
    * @returns The found product.
    * @throws CustomException if the product is not found.
    */
-  async findByName(name: string): Promise<ProductDTO | null> {
+  async findByName(name: string): Promise<Product | null> {
     try {
-      const product = await this.productRepo.findOne({ where: { name } });
-      return product ? ProductDTO.fromEntity(product) : null;
+      return await this.productRepo.findOne({ where: { name } });
     } catch (error) {
       throw CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND, {
         data: { name },
@@ -114,15 +107,9 @@ export class ProductsRepository extends BaseRepository<Product> {
     id: string,
     updateProductDto: UpdateProductDto,
     manager?: EntityManager,
-  ): Promise<ProductDTO> {
+  ): Promise<Product> {
     const repo = manager ? manager.getRepository(Product) : this.productRepo;
     try {
-      const product = await this.findOneById(id, manager);
-      if (!product) {
-        throw CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND, {
-          data: { id },
-        });
-      }
       await repo.update(id, updateProductDto);
       return await this.findOneById(id, manager);
     } catch (error) {
@@ -168,13 +155,12 @@ export class ProductsRepository extends BaseRepository<Product> {
    * @throws CustomException if there is an error saving the product.
    */
   async saveProduct(
-    inputProduct: ProductDTO,
+    inputProduct: Product,
     manager?: EntityManager,
-  ): Promise<ProductDTO> {
+  ): Promise<Product> {
     const product = ProductDTO.toEntity(inputProduct);
     try {
-      const savedProduct = await this.saveEntity(product, manager);
-      return ProductDTO.fromEntity(savedProduct);
+      return await this.saveEntity(product, manager);
     } catch (error) {
       if (error instanceof CustomException) {
         throw error;

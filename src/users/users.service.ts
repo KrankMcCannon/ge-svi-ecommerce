@@ -21,20 +21,16 @@ export class UsersService {
    * @returns The created user.
    */
   async create(createUserDto: CreateUserDto): Promise<UserDTO> {
-    const userExists = await this.findByEmail(createUserDto.email);
-    if (userExists) {
-      throw CustomException.fromErrorEnum(Errors.E_0027_INVALID_USER, {
-        data: { email: createUserDto.email },
-      });
-    }
+    await this.usersRepo.findByEmail(createUserDto.email);
 
     const { password, ...userData } = createUserDto;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    return await this.usersRepo.createUser({
+    const user = await this.usersRepo.createUser({
       ...userData,
       password: hashedPassword,
     });
+    return UserDTO.fromEntity(user);
   }
 
   /**
@@ -44,8 +40,9 @@ export class UsersService {
    * @returns The found user
    * @throws CustomException if the user is not found.
    */
-  async findByEmail(email: string): Promise<UserWithPasswordDTO | null> {
-    return await this.usersRepo.findByEmail(email);
+  async findByEmail(email: string): Promise<UserWithPasswordDTO> {
+    const user = await this.usersRepo.findByEmail(email);
+    return UserWithPasswordDTO.fromEntity(user);
   }
 
   /**
@@ -55,8 +52,9 @@ export class UsersService {
    * @param manager Optional transaction manager.
    * @returns The found user.
    */
-  async findById(id: string, manager?: EntityManager): Promise<UserDTO | null> {
-    return await this.usersRepo.findById(id, manager);
+  async findById(id: string, manager?: EntityManager): Promise<UserDTO> {
+    const user = await this.usersRepo.findById(id, manager);
+    return UserDTO.fromEntity(user);
   }
 
   /**
@@ -83,7 +81,7 @@ export class UsersService {
         queryRunner.manager,
       );
       await queryRunner.commitTransaction();
-      return updatedUser;
+      return UserDTO.fromEntity(updatedUser);
     } catch (error) {
       await queryRunner.rollbackTransaction();
       if (!(error instanceof CustomException)) {
