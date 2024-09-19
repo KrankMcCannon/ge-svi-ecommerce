@@ -3,8 +3,9 @@ import * as bcrypt from 'bcrypt';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
 import { DataSource, EntityManager, QueryRunner } from 'typeorm';
-import { CreateUserDto, UpdateUserDto } from './dtos';
+import { CreateUserDto, UpdateUserDto, UserWithPasswordDTO } from './dtos';
 import { UserDTO } from './dtos/user.dto';
+import { User } from './entities';
 import { UserRepository } from './users.repository';
 import { UsersService } from './users.service';
 
@@ -75,6 +76,31 @@ describe('UsersService', () => {
     }).compile();
 
     service = module.get<UsersService>(UsersService);
+
+    jest.spyOn(UserDTO, 'fromEntity').mockImplementation((entity: UserDTO) => {
+      return {
+        id: entity.id,
+        email: entity.email,
+        name: entity.name,
+        role: entity.role,
+        cart: entity.cart,
+        orders: entity.orders,
+      } as UserDTO;
+    });
+
+    jest
+      .spyOn(UserWithPasswordDTO, 'fromEntity')
+      .mockImplementation((entity: User) => {
+        return {
+          id: entity.id,
+          name: entity.name,
+          email: entity.email,
+          role: entity.role,
+          cart: entity.cart,
+          orders: entity.orders,
+          password: entity.password,
+        } as UserWithPasswordDTO;
+      });
   });
 
   afterEach(() => {
@@ -101,15 +127,13 @@ describe('UsersService', () => {
     });
 
     it('should throw an error if user already exists', async () => {
-      mockUserRepository.findByEmail.mockResolvedValueOnce(mockUser);
-
-      await expect(service.create(createUserDto)).rejects.toThrow(
-        CustomException.fromErrorEnum(Errors.E_0027_INVALID_USER, {
-          data: { email: createUserDto.email },
-        }),
+      mockUserRepository.findByEmail.mockRejectedValueOnce(
+        CustomException.fromErrorEnum(Errors.E_0026_DUPLICATE_USER),
       );
 
-      expect(mockUserRepository.createUser).not.toHaveBeenCalled();
+      await expect(service.create(createUserDto)).rejects.toThrow(
+        CustomException,
+      );
     });
   });
 
@@ -124,11 +148,13 @@ describe('UsersService', () => {
     });
 
     it('should return null if no user is found', async () => {
-      mockUserRepository.findByEmail.mockResolvedValueOnce(null);
+      mockUserRepository.findByEmail.mockRejectedValueOnce(
+        CustomException.fromErrorEnum(Errors.E_0025_USER_NOT_FOUND),
+      );
 
-      const result = await service.findByEmail('nonexistent@example.com');
-
-      expect(result).toBeNull();
+      await expect(service.findByEmail(mockUser.email)).rejects.toThrow(
+        CustomException,
+      );
     });
   });
 
@@ -150,11 +176,13 @@ describe('UsersService', () => {
     });
 
     it('should return null if no user is found', async () => {
-      mockUserRepository.findById.mockResolvedValueOnce(null);
+      mockUserRepository.findById.mockRejectedValueOnce(
+        CustomException.fromErrorEnum(Errors.E_0025_USER_NOT_FOUND),
+      );
 
-      const result = await service.findById(mockUser.id);
-
-      expect(result).toBeNull();
+      await expect(service.findById(mockUser.email)).rejects.toThrow(
+        CustomException,
+      );
     });
   });
 

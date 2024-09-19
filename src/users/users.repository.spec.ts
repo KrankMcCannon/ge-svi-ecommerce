@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { Cart } from 'src/carts/entities';
+import { CustomException } from 'src/config/custom-exception';
+import { Errors } from 'src/config/errors';
 import { DeleteResult, EntityManager, Repository, UpdateResult } from 'typeorm';
 import {
   CreateUserDto,
@@ -9,30 +12,29 @@ import {
 } from './dtos';
 import { User } from './entities';
 import { UserRepository } from './users.repository';
-import { CartDTO } from 'src/carts/dtos';
 
 describe('UsersRepository', () => {
   let repository: UserRepository;
   let ormRepository: jest.Mocked<Repository<User>>;
 
-  const mockUser: UserDTO = {
+  const mockUser: User = {
     id: '1',
     name: 'Test User',
     email: 'ex@mple.com',
     role: 'user',
     cart: null,
     orders: [],
-  };
-
-  const mockUserWithPassword: UserWithPasswordDTO = {
-    ...mockUser,
+    createdAt: new Date(),
+    updatedAt: null,
     password: 'password',
   };
 
-  const mockCart: CartDTO = {
+  const mockCart: Cart = {
     id: '1',
     cartItems: [],
     user: mockUser,
+    createdAt: new Date(),
+    updatedAt: null,
   };
 
   mockUser.cart = mockCart;
@@ -43,19 +45,16 @@ describe('UsersRepository', () => {
     role: 'admin',
   };
 
-  const mockUpdateUser: UserDTO = {
-    id: '1',
+  const mockUpdateUser: User = {
+    ...mockUser,
     name: 'Updated User',
     email: 'update@test.com',
-    role: 'admin',
-    cart: mockCart,
-    orders: [],
   };
 
   const mockOrmRepository = {
-    create: jest.fn().mockReturnValue(mockUserWithPassword),
-    findOne: jest.fn().mockResolvedValue(mockUserWithPassword),
-    save: jest.fn().mockResolvedValue(mockUserWithPassword),
+    create: jest.fn().mockReturnValue(mockUser),
+    findOne: jest.fn().mockResolvedValue(mockUser),
+    save: jest.fn().mockResolvedValue(mockUser),
     update: jest.fn().mockResolvedValue(mockUpdateUser),
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
     createQueryBuilder: jest.fn(() => ({
@@ -63,7 +62,7 @@ describe('UsersRepository', () => {
       orderBy: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
       take: jest.fn().mockReturnThis(),
-      getMany: jest.fn().mockResolvedValue([mockUserWithPassword]),
+      getMany: jest.fn().mockResolvedValue([mockUser]),
     })),
     metadata: {
       target: 'User',
@@ -145,35 +144,37 @@ describe('UsersRepository', () => {
 
   describe('Find User By Email', () => {
     beforeEach(() => {
-      ormRepository.findOne.mockResolvedValue(mockUserWithPassword as User);
+      ormRepository.findOne.mockResolvedValue(mockUser);
     });
 
     it('should find a user by email', async () => {
-      const result = await repository.findByEmail(mockUserWithPassword.email);
+      const result = await repository.findByEmail(mockUser.email);
 
-      expect(result).toEqual(expect.objectContaining(mockUserWithPassword));
+      expect(result).toEqual(expect.objectContaining(mockUser));
     });
 
     it('should return null if user is not found', async () => {
       ormRepository.findOne.mockResolvedValue(null);
 
-      const result = await repository.findByEmail(mockUserWithPassword.email);
+      const result = await repository.findByEmail(mockUser.email);
 
       expect(result).toBeNull();
     });
 
     it('should throw an error if an error occurs', async () => {
-      ormRepository.findOne.mockRejectedValue(new Error('Some Error'));
+      ormRepository.findOne.mockRejectedValue(
+        CustomException.fromErrorEnum(Errors.E_0025_USER_NOT_FOUND),
+      );
 
-      await expect(
-        repository.findByEmail(mockUserWithPassword.email),
-      ).rejects.toThrow();
+      await expect(repository.findByEmail(mockUser.email)).rejects.toThrow(
+        CustomException,
+      );
     });
   });
 
   describe('Find User By ID', () => {
     beforeEach(() => {
-      ormRepository.findOne.mockResolvedValue(mockUser as User);
+      ormRepository.findOne.mockResolvedValue(mockUser);
     });
 
     it('should find a user by ID', async () => {
@@ -189,15 +190,19 @@ describe('UsersRepository', () => {
     });
 
     it('should throw an error if an error occurs', async () => {
-      ormRepository.findOne.mockRejectedValue(new Error('Some Error'));
+      ormRepository.findOne.mockRejectedValue(
+        CustomException.fromErrorEnum(Errors.E_0025_USER_NOT_FOUND),
+      );
 
-      await expect(repository.findById(mockUser.id)).rejects.toThrow();
+      await expect(repository.findById(mockUser.id)).rejects.toThrow(
+        CustomException,
+      );
     });
   });
 
   describe('Create User', () => {
     beforeEach(() => {
-      ormRepository.save.mockResolvedValue(mockUser as User);
+      ormRepository.save.mockResolvedValue(mockUser);
     });
 
     it('should create a new user', async () => {
@@ -221,9 +226,13 @@ describe('UsersRepository', () => {
         password: 'password',
       };
 
-      ormRepository.save.mockRejectedValue(new Error('Some Error'));
+      ormRepository.save.mockRejectedValue(
+        CustomException.fromErrorEnum(Errors.E_0022_USER_CREATION_ERROR),
+      );
 
-      await expect(repository.createUser(createUserDto)).rejects.toThrow();
+      await expect(repository.createUser(createUserDto)).rejects.toThrow(
+        CustomException,
+      );
     });
   });
 
@@ -232,16 +241,13 @@ describe('UsersRepository', () => {
       ormRepository.update.mockResolvedValue(
         mockUpdateUser as unknown as UpdateResult,
       );
-      ormRepository.findOne.mockResolvedValue(mockUserWithPassword as User);
+      ormRepository.findOne.mockResolvedValue(mockUser);
     });
 
     it('should update a user', async () => {
       ormRepository.findOne.mockResolvedValue(mockUpdateUser as User);
 
-      const result = await repository.updateUser(
-        mockUserWithPassword,
-        updateUserDto,
-      );
+      const result = await repository.updateUser(mockUser, updateUserDto);
 
       expect(result).toEqual(expect.objectContaining(mockUpdateUser));
     });
@@ -261,11 +267,13 @@ describe('UsersRepository', () => {
     });
 
     it('should throw an error if an error occurs', async () => {
-      ormRepository.update.mockRejectedValue(new Error('Some Error'));
+      ormRepository.update.mockRejectedValue(
+        CustomException.fromErrorEnum(Errors.E_0023_USER_UPDATE_ERROR),
+      );
 
       await expect(
-        repository.updateUser(mockUserWithPassword, updateUserDto),
-      ).rejects.toThrow();
+        repository.updateUser(mockUser, updateUserDto),
+      ).rejects.toThrow(CustomException);
     });
   });
 
@@ -275,14 +283,14 @@ describe('UsersRepository', () => {
     });
 
     it('should delete a user', async () => {
-      const result = await repository.deleteUser(mockUserWithPassword.id);
+      const result = await repository.deleteUser(mockUser.id);
 
       expect(result).toBeUndefined();
     });
 
     it('should delete a user with a transaction manager', async () => {
       const result = await repository.deleteUser(
-        mockUserWithPassword.id,
+        mockUser.id,
         mockEntityManager,
       );
 
@@ -290,25 +298,23 @@ describe('UsersRepository', () => {
     });
 
     it('should throw an error if an error occurs', async () => {
-      ormRepository.delete.mockRejectedValue(new Error('Some Error'));
+      ormRepository.delete.mockRejectedValue(
+        CustomException.fromErrorEnum(Errors.E_0024_USER_REMOVE_ERROR),
+      );
 
-      await expect(
-        repository.deleteUser(mockUserWithPassword.id),
-      ).rejects.toThrow();
+      await expect(repository.deleteUser(mockUser.id)).rejects.toThrow();
     });
 
     it('should throw an error if user is not found', async () => {
       ormRepository.delete.mockResolvedValue({ affected: 0 } as DeleteResult);
 
-      await expect(
-        repository.deleteUser(mockUserWithPassword.id),
-      ).rejects.toThrow();
+      await expect(repository.deleteUser(mockUser.id)).rejects.toThrow();
     });
   });
 
   describe('Save User', () => {
     beforeEach(() => {
-      ormRepository.save.mockResolvedValue(mockUser as User);
+      ormRepository.save.mockResolvedValue(mockUser);
     });
 
     it('should save a user', async () => {
@@ -324,9 +330,13 @@ describe('UsersRepository', () => {
     });
 
     it('should throw an error if an error occurs', async () => {
-      ormRepository.save.mockRejectedValue(new Error('Some Error'));
+      ormRepository.save.mockRejectedValue(
+        CustomException.fromErrorEnum(Errors.E_0022_USER_CREATION_ERROR),
+      );
 
-      await expect(repository.saveUser(mockUser)).rejects.toThrow();
+      await expect(repository.saveUser(mockUser)).rejects.toThrow(
+        CustomException,
+      );
     });
   });
 });

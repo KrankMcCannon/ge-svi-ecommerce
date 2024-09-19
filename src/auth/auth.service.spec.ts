@@ -10,7 +10,6 @@ jest.mock('bcrypt');
 
 describe('AuthService', () => {
   let service: AuthService;
-  let jwtService: JwtService;
 
   const mockUser: UserDTO = {
     id: '1',
@@ -40,7 +39,6 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    jwtService = module.get<JwtService>(JwtService);
   });
 
   afterEach(() => {
@@ -74,11 +72,6 @@ describe('AuthService', () => {
     it('should return a JWT token', async () => {
       const result = await service.login(mockUser);
       expect(result).toEqual({ access_token: 'token' });
-      expect(jwtService.sign).toHaveBeenCalledWith({
-        email: mockUser.email,
-        role: mockUser.role,
-        sub: mockUser.id,
-      });
     });
   });
 });

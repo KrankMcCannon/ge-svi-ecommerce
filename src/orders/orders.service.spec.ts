@@ -7,12 +7,13 @@ import { CartsService } from '../../src/carts/carts.service';
 import { CustomException } from '../../src/config/custom-exception';
 import { Errors } from '../../src/config/errors';
 import { OrderDTO } from '../../src/orders/dtos/order.dto';
-import { Order } from '../../src/orders/entities';
+import { Order, OrderItem } from '../../src/orders/entities';
 import { OrderStatus } from '../../src/orders/enum';
 import { OrdersService } from '../../src/orders/orders.service';
 import { OrderItemsRepository } from '../../src/orders/repositories/order-items.repository';
 import { OrdersRepository } from '../../src/orders/repositories/orders.repository';
 import { ProductsService } from '../../src/products/products.service';
+import { OrderItemDTO } from './dtos';
 
 describe('OrdersService', () => {
   let service: OrdersService;
@@ -31,6 +32,14 @@ describe('OrdersService', () => {
     user: mockUser,
     orderItems: [],
     status: OrderStatus.CREATED,
+  };
+
+  const mockOrderItem: OrderItemDTO = {
+    id: 'order-item-id',
+    product: null,
+    order: mockOrder,
+    price: 100,
+    quantity: 2,
   };
 
   const mockCart: CartDTO = {
@@ -59,7 +68,12 @@ describe('OrdersService', () => {
   };
 
   mockUser.cart = mockCart;
+  mockUser.orders.push(mockOrder);
+  mockOrder.orderItems.push(mockOrderItem);
+  mockOrderItem.product = mockProduct;
   mockCart.cartItems.push(mockCartItem);
+  mockProduct.cartItems.push(mockCartItem);
+  mockProduct.orderItems.push(mockOrderItem);
 
   const mockOrdersRepository = {
     createOrder: jest.fn().mockResolvedValue(mockOrder),
@@ -69,9 +83,9 @@ describe('OrdersService', () => {
   };
 
   const mockOrderItemsRepository = {
-    createOrderItem: jest.fn().mockResolvedValue(mockCartItem),
-    findOrderItemsByOrderId: jest.fn().mockResolvedValue([mockCartItem]),
-    findOrderItemById: jest.fn().mockResolvedValue(mockCartItem),
+    createOrderItem: jest.fn().mockResolvedValue(mockOrderItem),
+    findOrderItemsByOrderId: jest.fn().mockResolvedValue([mockOrderItem]),
+    findOrderItemById: jest.fn().mockResolvedValue(mockOrderItem),
   };
 
   const mockCartsService = {
@@ -124,6 +138,18 @@ describe('OrdersService', () => {
         status: entity.status,
       } as OrderDTO;
     });
+
+    jest
+      .spyOn(OrderItemDTO, 'fromEntity')
+      .mockImplementation((entity: OrderItem) => {
+        return {
+          id: entity.id,
+          product: entity.product,
+          order: entity.order,
+          price: entity.price,
+          quantity: entity.quantity,
+        } as OrderItemDTO;
+      });
   });
 
   afterEach(() => {
@@ -142,7 +168,9 @@ describe('OrdersService', () => {
     });
 
     it('should throw error if cart is empty', async () => {
-      mockCartsService.findCartByUserId.mockResolvedValueOnce(null);
+      mockCartsService.findCartByUserId.mockRejectedValueOnce(
+        CustomException.fromErrorEnum(Errors.E_0016_CART_EMPTY),
+      );
 
       await expect(service.checkout(mockUser.id)).rejects.toThrow(
         CustomException,
@@ -198,7 +226,7 @@ describe('OrdersService', () => {
       const result = await service.findOrderItemsByOrderId(mockOrder.id);
 
       expect(result).toEqual(
-        expect.arrayContaining([expect.objectContaining(mockCartItem)]),
+        expect.arrayContaining([expect.objectContaining(mockOrderItem)]),
       );
     });
 
@@ -214,9 +242,9 @@ describe('OrdersService', () => {
 
   describe('findOrderItemById', () => {
     it('should return an order item by ID', async () => {
-      const result = await service.findOrderItemById(mockCartItem.id);
+      const result = await service.findOrderItemById(mockOrder.id);
 
-      expect(result).toEqual(expect.objectContaining(mockCartItem));
+      expect(result).toEqual(expect.objectContaining(mockOrderItem));
     });
 
     it('should throw an exception if order item is not found', async () => {

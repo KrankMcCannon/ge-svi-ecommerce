@@ -130,9 +130,7 @@ export class OrdersService {
   async findOrderItemsByOrderId(orderId: string): Promise<OrderItemDTO[]> {
     const orderItems =
       await this.orderItemsRepo.findOrderItemsByOrderId(orderId);
-    return orderItems && orderItems.length
-      ? orderItems.map(OrderItemDTO.fromEntity)
-      : [];
+    return orderItems.map(OrderItemDTO.fromEntity);
   }
 
   /**
