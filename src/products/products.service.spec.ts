@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
-import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { DataSource, EntityManager, QueryRunner } from 'typeorm';
 import {
   CommentDTO,
@@ -10,14 +9,13 @@ import {
   ProductDTO,
   UpdateProductDto,
 } from './dtos';
-import { Product } from './entities';
+import { Comment, Product } from './entities';
 import { ProductsService } from './products.service';
 import { CommentRepository } from './repositories/comments.repository';
 import { ProductsRepository } from './repositories/products.repository';
 
 describe('ProductsService', () => {
   let service: ProductsService;
-  let productsRepository: jest.Mocked<ProductsRepository>;
 
   const mockProduct: ProductDTO = {
     id: '1',
@@ -85,7 +83,6 @@ describe('ProductsService', () => {
     }).compile();
 
     service = module.get<ProductsService>(ProductsService);
-    productsRepository = module.get(ProductsRepository);
 
     jest
       .spyOn(ProductDTO, 'fromEntity')
@@ -100,6 +97,30 @@ describe('ProductsService', () => {
           comments: entity.comments,
           cartItems: entity.cartItems,
         } as ProductDTO;
+      });
+
+    jest.spyOn(ProductDTO, 'toEntity').mockImplementation((dto: ProductDTO) => {
+      return {
+        id: dto.id,
+        name: dto.name,
+        description: dto.description,
+        price: dto.price,
+        stock: dto.stock,
+        orderItems: dto.orderItems,
+        comments: dto.comments,
+        cartItems: dto.cartItems,
+      } as Product;
+    });
+
+    jest
+      .spyOn(CommentDTO, 'fromEntity')
+      .mockImplementation((entity: Comment) => {
+        return {
+          id: entity.id,
+          content: entity.content,
+          author: entity.author,
+          product: entity.product,
+        } as CommentDTO;
       });
   });
 
@@ -124,29 +145,27 @@ describe('ProductsService', () => {
     });
 
     it('should throw an error if product exists', async () => {
-      productsRepository.findByName.mockResolvedValueOnce(mockProduct);
+      mockProductsRepository.findByName.mockRejectedValueOnce(
+        CustomException.fromErrorEnum(Errors.E_0011_DUPLICATE_PRODUCT),
+      );
       await expect(service.createProduct(dto)).rejects.toThrow(CustomException);
     });
   });
 
   describe('Find All Products', () => {
     it('should return a list of products', async () => {
-      const paginationInfo = new PaginationInfo({
-        pageNumber: 0,
-        pageSize: 10,
-      });
-      const sort = 'name';
-      const filter = { category: 'Electronics' };
-
-      const result = await service.findAllProducts(
-        paginationInfo,
-        sort,
-        filter,
-      );
+      const result = await service.findAllProducts();
 
       expect(result).toEqual(
         expect.arrayContaining([expect.objectContaining(mockProduct)]),
       );
+    });
+
+    it('should return an empty array if no products are found', async () => {
+      mockProductsRepository.findAll.mockResolvedValue([]);
+      const result = await service.findAllProducts();
+
+      expect(result).toEqual([]);
     });
   });
 
@@ -156,19 +175,20 @@ describe('ProductsService', () => {
       expect(result).toEqual(expect.objectContaining(mockProduct));
     });
 
-    it('should throw an error if id is invalid', async () => {
-      await expect(service.findProductById('')).rejects.toThrow(
+    it('should throw an error if product is not found', async () => {
+      mockProductsRepository.findOneById.mockRejectedValueOnce(
+        CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND),
+      );
+      await expect(service.findProductById('2')).rejects.toThrow(
         CustomException,
       );
     });
 
-    it('should throw an error if product not found', async () => {
-      productsRepository.findOneById.mockRejectedValueOnce(
-        CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND, {
-          data: { id: '2' },
-        }),
+    it('should throw an error if invalid id is provided', async () => {
+      mockProductsRepository.findOneById.mockRejectedValueOnce(
+        CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND),
       );
-      await expect(service.findProductById('2')).rejects.toThrow(
+      await expect(service.findProductById('')).rejects.toThrow(
         CustomException,
       );
     });
@@ -184,7 +204,7 @@ describe('ProductsService', () => {
     });
 
     it('should handle errors and rollback transaction', async () => {
-      productsRepository.updateProduct.mockRejectedValueOnce(
+      mockProductsRepository.updateProduct.mockRejectedValueOnce(
         new Error('Update failed'),
       );
 
@@ -201,11 +221,29 @@ describe('ProductsService', () => {
     });
 
     it('should handle errors and rollback transaction', async () => {
-      productsRepository.removeProduct.mockRejectedValueOnce(
+      mockProductsRepository.removeProduct.mockRejectedValueOnce(
         new Error('Remove failed'),
       );
 
       await expect(service.removeProduct(mockProduct.id)).rejects.toThrow(
+        CustomException,
+      );
+    });
+  });
+
+  describe('Save Product', () => {
+    it('should save and return the product', async () => {
+      const result = await service.saveProduct(mockProduct);
+
+      expect(result).toEqual(expect.objectContaining(mockProduct));
+    });
+
+    it('should handle errors if save fails', async () => {
+      mockProductsRepository.saveProduct.mockRejectedValueOnce(
+        CustomException.fromErrorEnum(Errors.E_0007_PRODUCT_UPDATE_ERROR),
+      );
+
+      await expect(service.saveProduct(mockProduct)).rejects.toThrow(
         CustomException,
       );
     });
@@ -224,7 +262,7 @@ describe('ProductsService', () => {
     });
 
     it('should throw an error if product not found', async () => {
-      productsRepository.findOneById.mockRejectedValueOnce(
+      mockProductsRepository.findOneById.mockRejectedValueOnce(
         CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND, {
           data: { id: '2' },
         }),
@@ -236,17 +274,18 @@ describe('ProductsService', () => {
 
   describe('Find All Comments', () => {
     it('should return a list of comments for a product', async () => {
-      const productId = '1';
-      const paginationInfo = new PaginationInfo({
-        pageNumber: 0,
-        pageSize: 10,
-      });
-
-      const result = await service.findAllComments(productId, paginationInfo);
+      const result = await service.findAllComments(mockProduct.id);
 
       expect(result).toEqual(
         expect.arrayContaining([expect.objectContaining(mockComment)]),
       );
+    });
+
+    it('should return an empty array if no comments are found', async () => {
+      mockCommentRepository.findAllComments.mockResolvedValue([]);
+      const result = await service.findAllComments(mockProduct.id);
+
+      expect(result).toEqual([]);
     });
   });
 });

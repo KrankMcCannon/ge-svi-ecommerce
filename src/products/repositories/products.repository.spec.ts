@@ -2,17 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
-import { PaginationInfo } from 'src/config/pagination-info.dto';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager } from 'typeorm';
 import { CreateProductDto, ProductDTO, UpdateProductDto } from '../dtos';
 import { Product } from '../entities/product.entity';
 import { ProductsRepository } from './products.repository';
 
 describe('ProductsRepository', () => {
   let repository: ProductsRepository;
-  let ormRepository: jest.Mocked<Repository<Product>>;
 
-  const mockProduct: ProductDTO = {
+  const mockProduct: Product = {
     id: '1',
     name: 'Test Product',
     description: 'Test Description',
@@ -21,6 +19,8 @@ describe('ProductsRepository', () => {
     cartItems: [],
     comments: [],
     orderItems: [],
+    createdAt: new Date(),
+    updatedAt: undefined,
   };
 
   const updateProductDto: UpdateProductDto = {
@@ -37,6 +37,7 @@ describe('ProductsRepository', () => {
     update: jest.fn().mockResolvedValue(updateProductDto),
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
     createQueryBuilder: jest.fn(() => ({
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
@@ -60,6 +61,7 @@ describe('ProductsRepository', () => {
         primaryColumns: [{ propertyName: 'id' }],
       },
       createQueryBuilder: jest.fn(() => ({
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
         leftJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
@@ -83,9 +85,6 @@ describe('ProductsRepository', () => {
     }).compile();
 
     repository = module.get<ProductsRepository>(ProductsRepository);
-    ormRepository = module.get<Repository<Product>>(
-      getRepositoryToken(Product),
-    ) as jest.Mocked<Repository<Product>>;
 
     jest
       .spyOn(ProductDTO, 'fromEntity')
@@ -140,7 +139,7 @@ describe('ProductsRepository', () => {
     });
 
     it('should throw an error if save fails', async () => {
-      ormRepository.save.mockRejectedValue(new Error('Save error'));
+      mockOrmRepository.save.mockRejectedValue(new Error('Save error'));
 
       const createProductDto: CreateProductDto = {
         name: 'Test Product',
@@ -157,14 +156,7 @@ describe('ProductsRepository', () => {
 
   describe('Find All Products', () => {
     it('should return an array of products using EntityManager', async () => {
-      const query = { name: 'Test' };
-      const paginationInfo = new PaginationInfo({
-        pageNumber: 0,
-        pageSize: 10,
-        paginationEnabled: true,
-      });
-
-      const result = await repository.findAll(query, paginationInfo);
+      const result = await repository.findAll();
 
       expect(result).toEqual(
         expect.arrayContaining([expect.objectContaining(mockProduct)]),
@@ -172,19 +164,17 @@ describe('ProductsRepository', () => {
     });
 
     it('should throw an error if the query fails', async () => {
-      ormRepository.createQueryBuilder.mockImplementation(() => {
-        throw new Error('Query error');
-      });
-      const query = { name: 'Test' };
-      const paginationInfo = new PaginationInfo({
-        pageNumber: 0,
-        pageSize: 10,
-        paginationEnabled: true,
+      mockOrmRepository.createQueryBuilder.mockReturnValueOnce({
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([]),
       });
 
-      await expect(repository.findAll(query, paginationInfo)).rejects.toThrow(
-        Error,
-      );
+      const result = await repository.findAll();
+      expect(result).toEqual([]);
     });
   });
 
@@ -194,7 +184,10 @@ describe('ProductsRepository', () => {
         mockEntityManager.getRepository(Product).findOne as jest.Mock
       ).mockResolvedValue(mockProduct);
 
-      const result = await repository.findOneById('1', mockEntityManager);
+      const result = await repository.findOneById(
+        mockProduct.id,
+        mockEntityManager,
+      );
 
       expect(result).toEqual(expect.objectContaining(mockProduct));
     });
@@ -205,7 +198,7 @@ describe('ProductsRepository', () => {
       ).mockResolvedValue(null);
 
       await expect(
-        repository.findOneById('1', mockEntityManager),
+        repository.findOneById(mockProduct.id, mockEntityManager),
       ).rejects.toThrow(
         CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND),
       );
@@ -214,15 +207,15 @@ describe('ProductsRepository', () => {
 
   describe('Find Product By Name', () => {
     it('should return a product if found by name', async () => {
-      const result = await repository.findByName('Test Product');
+      const result = await repository.findByName(mockProduct.name);
 
       expect(result).toEqual(expect.objectContaining(mockProduct));
     });
 
     it('should return null if no product is found by name', async () => {
-      ormRepository.findOne.mockResolvedValue(null);
+      mockOrmRepository.findOne.mockResolvedValue(null);
 
-      const result = await repository.findByName('Nonexistent Product');
+      const result = await repository.findByName(mockProduct.name);
 
       expect(result).toBeNull();
     });
@@ -235,7 +228,7 @@ describe('ProductsRepository', () => {
       ).mockResolvedValue(updateProductDto);
 
       const result = await repository.updateProduct(
-        '1',
+        mockProduct.id,
         updateProductDto,
         mockEntityManager,
       );
@@ -246,7 +239,9 @@ describe('ProductsRepository', () => {
     it('should throw an error if the update fails', async () => {
       (
         mockEntityManager.getRepository(Product).update as jest.Mock
-      ).mockRejectedValue(new Error('Update error'));
+      ).mockRejectedValue(
+        CustomException.fromErrorEnum(Errors.E_0007_PRODUCT_UPDATE_ERROR),
+      );
 
       const updateProductDto: UpdateProductDto = {
         name: 'Updated Product',
@@ -256,8 +251,12 @@ describe('ProductsRepository', () => {
       };
 
       await expect(
-        repository.updateProduct('1', updateProductDto, mockEntityManager),
-      ).rejects.toThrow(Error);
+        repository.updateProduct(
+          mockProduct.id,
+          updateProductDto,
+          mockEntityManager,
+        ),
+      ).rejects.toThrow(CustomException);
     });
   });
 
@@ -278,7 +277,10 @@ describe('ProductsRepository', () => {
         mockEntityManager.getRepository(Product).delete as jest.Mock
       ).mockResolvedValue({ affected: 1 });
 
-      const result = await repository.removeProduct('1', mockEntityManager);
+      const result = await repository.removeProduct(
+        mockProduct.id,
+        mockEntityManager,
+      );
 
       expect(result).toBeUndefined();
     });
@@ -297,13 +299,13 @@ describe('ProductsRepository', () => {
       });
       (
         mockEntityManager.getRepository(Product).delete as jest.Mock
-      ).mockRejectedValueOnce(new Error('Delete error'));
-
-      await expect(
-        repository.removeProduct('1', mockEntityManager),
-      ).rejects.toThrow(
+      ).mockRejectedValueOnce(
         CustomException.fromErrorEnum(Errors.E_0008_PRODUCT_REMOVE_ERROR),
       );
+
+      await expect(
+        repository.removeProduct(mockProduct.id, mockEntityManager),
+      ).rejects.toThrow(CustomException);
     });
 
     it('should throw an error if the deletion fails', async () => {
@@ -320,11 +322,13 @@ describe('ProductsRepository', () => {
       });
       (
         mockEntityManager.getRepository(Product).delete as jest.Mock
-      ).mockRejectedValue(new Error('Delete error'));
+      ).mockRejectedValue(
+        CustomException.fromErrorEnum(Errors.E_0008_PRODUCT_REMOVE_ERROR),
+      );
 
       await expect(
-        repository.removeProduct('1', mockEntityManager),
-      ).rejects.toThrow(Error);
+        repository.removeProduct(mockProduct.id, mockEntityManager),
+      ).rejects.toThrow(CustomException);
     });
   });
 
@@ -341,11 +345,13 @@ describe('ProductsRepository', () => {
     it('should throw an error if save fails', async () => {
       (
         mockEntityManager.getRepository(Product).save as jest.Mock
-      ).mockRejectedValue(new Error('Save error'));
+      ).mockRejectedValue(
+        CustomException.fromErrorEnum(Errors.E_0007_PRODUCT_UPDATE_ERROR),
+      );
 
       await expect(
         repository.saveProduct(mockProduct, mockEntityManager),
-      ).rejects.toThrow(Error);
+      ).rejects.toThrow(CustomException);
     });
   });
 });

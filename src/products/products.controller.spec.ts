@@ -1,13 +1,13 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
+import { StandardList } from 'src/config/standard-list.dto';
+import { StandardResponse } from 'src/config/standard-response.dto';
 import { CreateCommentDto, CreateProductDto, UpdateProductDto } from './dtos';
 import { CommentDTO } from './dtos/comment.dto';
 import { ProductDTO } from './dtos/product.dto';
 import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
-import { StandardResponse } from 'src/config/standard-response.dto';
-import { StandardList } from 'src/config/standard-list.dto';
 
 describe('ProductsController', () => {
   let controller: ProductsController;
