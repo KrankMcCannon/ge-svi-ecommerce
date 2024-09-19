@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { CartsService } from 'src/carts/carts.service';
 import { CartDTO, CartItemDTO } from 'src/carts/dtos';
-import { DataSource } from 'typeorm';
+import { PaginationInfo } from 'src/config/pagination-info.dto';
+import { ProductDTO } from 'src/products/dtos';
+import { ProductsService } from 'src/products/products.service';
+import { DataSource, EntityManager } from 'typeorm';
 import { OrderItemDTO } from './dtos/order-item.dto';
 import { OrderDTO } from './dtos/order.dto';
 import { OrderItem } from './entities';
@@ -13,6 +16,7 @@ import { OrdersRepository } from './repositories/orders.repository';
 export class OrdersService {
   constructor(
     private readonly cartsService: CartsService,
+    private readonly productsService: ProductsService,
     private readonly ordersRepo: OrdersRepository,
     private readonly orderItemsRepo: OrderItemsRepository,
     private readonly dataSource: DataSource,
@@ -44,11 +48,16 @@ export class OrdersService {
 
       const orderItems: OrderItem[] = [];
       for await (const cartItem of cartItems) {
+        const product = await this.productsService.findProductById(
+          cartItem.product.id,
+          queryRunner.manager,
+        );
+        const productEntity = ProductDTO.toEntity(product);
         const cartItemEntity = CartItemDTO.toEntity(cartItem);
         const orderItemEntity = new OrderItem();
-        orderItemEntity.product = cartItemEntity.product;
+        orderItemEntity.product = productEntity;
         orderItemEntity.quantity = cartItemEntity.quantity;
-        orderItemEntity.price = cartItemEntity.product.price;
+        orderItemEntity.price = productEntity.price;
         const orderItem = await this.orderItemsRepo.createOrderItem(
           orderItemEntity,
           queryRunner.manager,
@@ -56,13 +65,13 @@ export class OrdersService {
         orderItems.push(orderItem);
       }
 
-      await this.cartsService.clearCart(cartEntity.id, queryRunner.manager);
-
       const order = await this.ordersRepo.createOrder(
         cartEntity.user,
         orderItems,
         queryRunner.manager,
       );
+
+      await this.cartsService.deleteCart(cartEntity.id, queryRunner.manager);
 
       await queryRunner.commitTransaction();
 
@@ -94,9 +103,21 @@ export class OrdersService {
    * @returns List of orders.
    * @throws CustomException if there is an error finding the orders.
    */
-  async findOrdersByUserId(userId: string): Promise<OrderDTO[]> {
-    const orders = await this.ordersRepo.findOrdersByUserId(userId);
-    return orders && orders.length ? orders.map(OrderDTO.fromEntity) : [];
+  async findOrdersByUserId(
+    userId: string,
+    query?: {
+      pagination?: PaginationInfo;
+      sort?: string;
+      filter?: any;
+    },
+    manager?: EntityManager,
+  ): Promise<OrderDTO[]> {
+    const orders = await this.ordersRepo.findOrdersByUserId(
+      userId,
+      manager,
+      query,
+    );
+    return orders.map(OrderDTO.fromEntity);
   }
 
   /**

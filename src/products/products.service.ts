@@ -51,7 +51,7 @@ export class ProductsService {
    * @returns List of products.
    */
   async findAllProducts(
-    query?: { pagination: PaginationInfo; sort: string; filter: any },
+    query?: { pagination?: PaginationInfo; sort?: string; filter?: any },
     manager?: EntityManager,
   ): Promise<ProductDTO[]> {
     const products = await this.productsRepo.findAll(query, manager);

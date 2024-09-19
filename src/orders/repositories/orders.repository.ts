@@ -80,14 +80,15 @@ export class OrdersRepository extends BaseRepository<Order> {
   async findOrdersByUserId(
     userId: string,
     manager?: EntityManager,
-    query?: { pagination: PaginationInfo; sort: string; filter: any },
+    query?: { pagination?: PaginationInfo; sort?: string; filter?: any },
   ): Promise<Order[]> {
     const repo = manager ? manager.getRepository(Order) : this.repo;
-    const qb = repo.createQueryBuilder('order');
-    qb.where('order.userId = :userId', { userId }).leftJoinAndSelect(
-      'order.orderItems',
-      'orderItems',
-    );
+    const qb = repo
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.user', 'user')
+      .leftJoinAndSelect('order.orderItems', 'orderItems')
+      .leftJoinAndSelect('orderItems.product', 'product')
+      .where('order.userId = :userId', { userId });
 
     this.applyFilters(qb, query?.filter);
     this.applyPagination(qb, query?.pagination);

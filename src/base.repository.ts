@@ -90,8 +90,11 @@ export class BaseRepository<Entity> {
    */
   protected applyPagination(
     qb: SelectQueryBuilder<Entity>,
-    pagination: PaginationInfo,
+    pagination?: PaginationInfo,
   ) {
+    if (!pagination) {
+      return;
+    }
     const { pageNumber = 0, pageSize = 20 } = pagination;
     qb.skip(pageNumber * pageSize).take(pageSize);
   }
@@ -129,7 +132,10 @@ export class BaseRepository<Entity> {
    * @param qb Query builder to apply filters to.
    * @param query Query object.
    */
-  protected applyFilters(qb: SelectQueryBuilder<Entity>, query: any) {
+  protected applyFilters(qb: SelectQueryBuilder<Entity>, query?: any) {
+    if (!query) {
+      return;
+    }
     Object.keys(query).forEach((key) => {
       if (
         this.repo.metadata.primaryColumns.some(

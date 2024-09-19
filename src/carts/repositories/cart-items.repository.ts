@@ -65,7 +65,7 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
   async findCartItems(
     cartId: string,
     manager?: EntityManager,
-    query?: { pagination: PaginationInfo; sort: string; filter: any },
+    query?: { pagination?: PaginationInfo; sort?: string; filter?: any },
   ): Promise<CartItem[]> {
     const repo = manager ? manager.getRepository(CartItem) : this.repo;
     const qb = repo.createQueryBuilder('cartItem');
@@ -73,9 +73,9 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
       .innerJoin('cartItem.cart', 'cart')
       .where('cart.id = :cartId', { cartId });
 
-    this.applyFilters(qb, query.filter);
-    this.applyPagination(qb, query.pagination);
-    this.applySorting(qb, query.sort);
+    this.applyFilters(qb, query?.filter);
+    this.applyPagination(qb, query?.pagination);
+    this.applySorting(qb, query?.sort);
 
     return await qb.getMany();
   }

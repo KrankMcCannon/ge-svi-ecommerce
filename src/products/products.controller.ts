@@ -63,16 +63,16 @@ export class ProductsController {
   })
   @UsePipes(new ValidationPipe({ transform: true }))
   async findAll(
-    @Query(new PaginationInfoPipe()) paginationInfo: PaginationInfo,
+    @Query(new PaginationInfoPipe()) pagination: PaginationInfo,
     @Query('sort') sort?: string,
     @Query() filter?: any,
   ): Promise<StandardList<ProductDTO>> {
     const products = await this.productsService.findAllProducts({
-      pagination: paginationInfo,
+      pagination,
       sort,
       filter,
     });
-    return new StandardList(products, products.length, paginationInfo);
+    return new StandardList(products, products.length, pagination);
   }
 
   @Get(':id')

@@ -18,7 +18,7 @@ import { RolesGuard } from 'src/config/strategies/roles.guard';
 import { CreateUserDto, UpdateUserDto, UserDTO } from './dtos';
 import { UsersService } from './users.service';
 
-@ApiTags('users')
+@ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

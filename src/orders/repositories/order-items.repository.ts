@@ -57,7 +57,7 @@ export class OrderItemsRepository extends BaseRepository<OrderItem> {
   async findOrderItemsByOrderId(
     orderId: string,
     manager?: EntityManager,
-    query?: { pagination: PaginationInfo; sort: string; filter: any },
+    query?: { pagination?: PaginationInfo; sort?: string; filter?: any },
   ): Promise<OrderItem[]> {
     const repo = manager
       ? manager.getRepository(OrderItem)

@@ -78,16 +78,16 @@ export class CartsController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async findCartItems(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Query(new PaginationInfoPipe()) paginationInfo: PaginationInfo,
+    @Query(new PaginationInfoPipe()) pagination: PaginationInfo,
     @Query('sort') sort?: string,
     @Query() filter?: any,
   ): Promise<StandardList<CartItemDTO>> {
     const cartItems = await this.cartsService.findCartItems(id, {
+      pagination,
       sort,
-      ...paginationInfo,
-      ...filter,
+      filter,
     });
-    return new StandardList(cartItems, cartItems.length, paginationInfo);
+    return new StandardList(cartItems, cartItems.length, pagination);
   }
 
   @Delete(':id')

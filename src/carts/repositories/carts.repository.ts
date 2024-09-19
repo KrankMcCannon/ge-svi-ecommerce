@@ -114,7 +114,7 @@ export class CartsRepository extends BaseRepository<Cart> {
     const repo = manager ? manager.getRepository(Cart) : this.repo;
     return await repo.findOne({
       where: { user: { id: userId } },
-      relations: ['cartItems'],
+      relations: ['cartItems', 'user'],
     });
   }
 
@@ -154,6 +154,9 @@ export class CartsRepository extends BaseRepository<Cart> {
 
       await cartRepo.delete(cartId);
     } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(Errors.E_0014_CART_REMOVE_ERROR, {
         data: { id: cartId },
         originalError: error,
@@ -201,6 +204,9 @@ export class CartsRepository extends BaseRepository<Cart> {
 
       await cartRepo.save(cart);
     } catch (error) {
+      if (error instanceof CustomException) {
+        throw error;
+      }
       throw CustomException.fromErrorEnum(Errors.E_0014_CART_REMOVE_ERROR, {
         data: { id: cartId },
         originalError: error,

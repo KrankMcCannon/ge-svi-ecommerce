@@ -148,11 +148,13 @@ export class CartsService {
    * Retrieves all cart items for a user.
    *
    * @param userId User's ID.
+   * @param query Optional query options.
+   * @param manager Optional transaction manager.
    * @returns An array of cart items.
    */
   async findCartItems(
     cartId: string,
-    options?: {
+    query?: {
       pagination?: PaginationInfo;
       sort?: string;
       filter?: any;
@@ -162,11 +164,7 @@ export class CartsService {
     const cartItems = await this.cartItemRepository.findCartItems(
       cartId,
       manager,
-      {
-        sort: options.sort,
-        ...options.pagination,
-        ...options.filter,
-      },
+      query,
     );
     return cartItems.map(CartItemDTO.fromEntity);
   }
@@ -233,25 +231,19 @@ export class CartsService {
    * Delete a cart.
    *
    * @param cartId - Cart ID.
+   * @param manager - Optional transaction manager.
    * @throws CustomException if there is an error deleting the cart.
    */
-  async deleteCart(cartId: string): Promise<void> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  async deleteCart(cartId: string, manager?: EntityManager): Promise<void> {
     try {
-      await this.cartsRepository.deleteCart(cartId, queryRunner.manager);
-      await queryRunner.commitTransaction();
+      await this.cartsRepository.deleteCart(cartId, manager);
     } catch (error) {
-      await queryRunner.rollbackTransaction();
       if (error instanceof CustomException) {
         throw error;
       }
       CustomException.fromErrorEnum(Errors.E_0014_CART_REMOVE_ERROR, {
         data: { id: cartId },
       });
-    } finally {
-      await queryRunner.release();
     }
   }
 

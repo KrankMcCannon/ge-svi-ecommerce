@@ -63,9 +63,9 @@ export class CommentRepository extends BaseRepository<Comment> {
   async findAllComments(
     productId: string,
     query?: {
-      pagination: PaginationInfo;
-      sort: string;
-      filter: any;
+      pagination?: PaginationInfo;
+      sort?: string;
+      filter?: any;
     },
     manager?: EntityManager,
   ): Promise<Comment[]> {
@@ -74,9 +74,9 @@ export class CommentRepository extends BaseRepository<Comment> {
     qb.where('comment.productId = :productId', { productId });
     qb.innerJoinAndSelect('comment.product', 'product');
 
-    this.applySorting(qb, query.sort);
-    this.applyFilters(qb, query.filter);
-    this.applyPagination(qb, query.pagination);
+    this.applySorting(qb, query?.sort);
+    this.applyFilters(qb, query?.filter);
+    this.applyPagination(qb, query?.pagination);
 
     return await qb.getMany();
   }
