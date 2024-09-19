@@ -17,6 +17,15 @@ function __getStringWithDefault(
 
 export class EnvironmentVariables {
   /**
+   * Node environment
+   * Default: 'development'
+   * @returns {string} The node environment (NODE_ENV)
+   */
+  static get NODE_ENV(): string {
+    return __getStringWithDefault(process.env.NODE_ENV, 'development');
+  }
+
+  /**
    * Application port
    * Default: 3000
    * @returns {number} The port the application will run on (PORT)
