@@ -90,7 +90,8 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
     cartItemId: string,
     manager?: EntityManager,
   ): Promise<CartItem | null> {
-    return await this.findEntityById(cartItemId, manager);
+    const relations = ['product', 'cart'];
+    return await this.findEntityById(cartItemId, relations, manager);
   }
 
   async findCartItemByCartIdAndProductId(
@@ -101,6 +102,7 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
     const repo = manager ? manager.getRepository(CartItem) : this.repo;
     return await repo.findOne({
       where: { cart: { id: cartId }, product: { id: productId } },
+      relations: ['product', 'cart'],
     });
   }
 

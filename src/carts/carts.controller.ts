@@ -54,6 +54,22 @@ export class CartsController {
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('user', 'admin')
+  @ApiOperation({ summary: 'Get the cart info' })
+  @ApiStandardList({
+    type: CartItemDTO,
+    description: 'Get the cart info',
+  })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async findCart(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<StandardResponse<CartDTO>> {
+    const cart = await this.cartsService.findCartById(id);
+    return new StandardResponse(cart);
+  }
+
+  @Get(':id/items')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('user', 'admin')
   @ApiOperation({ summary: 'Get a list of products in the cart' })
   @ApiStandardList({
     type: CartItemDTO,
@@ -61,14 +77,13 @@ export class CartsController {
   })
   @UsePipes(new ValidationPipe({ transform: true }))
   async findCartItems(
-    @Request() req: any,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Query(new PaginationInfoPipe()) paginationInfo: PaginationInfo,
     @Query('sort') sort?: string,
     @Query() filter?: any,
   ): Promise<StandardList<CartItemDTO>> {
-    const userId = req.user.id;
     const cartItems = await this.cartsService.findCartItems(
-      userId,
+      id,
       paginationInfo,
       sort,
       filter,
@@ -79,18 +94,32 @@ export class CartsController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('user', 'admin')
-  @ApiOperation({ summary: 'Remove a product from the cart' })
+  @ApiOperation({ summary: 'Remove a item from the cart' })
   @ApiStandardResponse({
     type: Boolean,
-    description: 'Remove a product from the cart',
+    description: 'Remove a item from the cart',
   })
-  async removeFromCart(
-    @Request() req: any,
+  async deleteCart(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() body: { productId: string },
   ): Promise<StandardResponse<boolean>> {
-    const userId = req.user.id;
-    await this.cartsService.removeProductFromCart(userId, id, body.productId);
+    await this.cartsService.deleteCart(id);
+    return new StandardResponse(true);
+  }
+
+  @Delete(':cartId/item/:itemId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('user', 'admin')
+  @ApiOperation({ summary: 'Remove a item from the cart' })
+  @ApiStandardResponse({
+    type: Boolean,
+    description: 'Remove a item from the cart',
+  })
+  async removeItemFromCart(
+    @Request() req: any,
+    @Param('cartId', new ParseUUIDPipe()) cartId: string,
+    @Param('itemId', new ParseUUIDPipe()) itemId: string,
+  ): Promise<StandardResponse<boolean>> {
+    await this.cartsService.removeItemFromCart(cartId, itemId);
     return new StandardResponse(true);
   }
 }

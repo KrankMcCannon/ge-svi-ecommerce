@@ -80,13 +80,13 @@ export class ProductDTO {
     productDTO.description = product.description;
     productDTO.price = product.price;
     productDTO.stock = product.stock;
-    if (!product.cartItems && product.cartItems?.length > 0) {
+    if (product.cartItems && product.cartItems?.length > 0) {
       productDTO.cartItems = product.cartItems.map(CartItemDTO.fromEntity);
     }
-    if (!product.comments && product.comments?.length > 0) {
+    if (product.comments && product.comments?.length > 0) {
       productDTO.comments = product.comments.map(CommentDTO.fromEntity);
     }
-    if (!product.orderItems && product.orderItems?.length > 0) {
+    if (product.orderItems && product.orderItems?.length > 0) {
       productDTO.orderItems = product.orderItems.map(OrderItemDTO.fromEntity);
     }
     return productDTO;
@@ -102,13 +102,13 @@ export class ProductDTO {
     product.description = dto.description;
     product.price = dto.price;
     product.stock = dto.stock;
-    if (!dto.cartItems && dto.cartItems?.length > 0) {
+    if (dto.cartItems && dto.cartItems?.length > 0) {
       product.cartItems = dto.cartItems.map(CartItemDTO.toEntity);
     }
-    if (!dto.comments && dto.comments?.length > 0) {
+    if (dto.comments && dto.comments?.length > 0) {
       product.comments = dto.comments.map(CommentDTO.toEntity);
     }
-    if (!dto.orderItems && dto.orderItems?.length > 0) {
+    if (dto.orderItems && dto.orderItems?.length > 0) {
       product.orderItems = dto.orderItems.map(OrderItemDTO.toEntity);
     }
     return product;

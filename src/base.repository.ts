@@ -38,12 +38,15 @@ export class BaseRepository<Entity> {
   /**
    * Find an entity by its ID.
    *
-   * @param entity Entity to delete.
+   * @param id The ID of the entity to find.
+   * @param relations Optional array of relations to include in the query.
    * @param manager Optional entity manager.
    * @returns The found entity.
+   * @throws CustomException if the entity is not found or an error occurs.
    */
   protected async findEntityById(
     id: any,
+    relations?: string[],
     manager?: EntityManager,
   ): Promise<Entity> {
     const repo = manager
@@ -58,7 +61,10 @@ export class BaseRepository<Entity> {
         });
       }
       const primaryKey = primaryColumns[0].propertyName as keyof Entity;
-      const entity = await repo.findOne({ where: { [primaryKey]: id } as any });
+      const entity = await repo.findOne({
+        where: { [primaryKey]: id } as any,
+        relations,
+      });
       if (!entity) {
         throw CustomException.fromErrorEnum(Errors.E_0002_NOT_FOUND_ERROR, {
           data: { id },

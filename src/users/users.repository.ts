@@ -67,7 +67,8 @@ export class UserRepository extends BaseRepository<User> {
    * @returns The found user.
    */
   async findById(id: string, manager?: EntityManager): Promise<User> {
-    return await this.findEntityById(id, manager);
+    const relations = ['cart', 'orders'];
+    return await this.findEntityById(id, relations, manager);
   }
 
   /**
@@ -86,7 +87,8 @@ export class UserRepository extends BaseRepository<User> {
     const repo = manager ? manager.getRepository(User) : this.userRepo;
     try {
       await repo.update(user.id, updateUserDto);
-      return await this.findEntityById(user.id, manager);
+      const relations = ['cart', 'orders'];
+      return await this.findEntityById(user.id, relations, manager);
     } catch (error) {
       if (error instanceof CustomException) {
         throw error;

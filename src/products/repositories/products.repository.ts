@@ -55,8 +55,11 @@ export class ProductsRepository extends BaseRepository<Product> {
    * @param pagination Pagination information.
    * @returns List of products.
    */
-  async findAll(query: any, pagination: PaginationInfo): Promise<Product[]> {
+  async findAll(query: any, pagination?: PaginationInfo): Promise<Product[]> {
     const qb = this.productRepo.createQueryBuilder('product');
+    qb.leftJoinAndSelect('product.cartItems', 'cartItems')
+      .leftJoinAndSelect('product.comments', 'comments')
+      .leftJoinAndSelect('product.orderItems', 'orderItems');
 
     this.applyFilters(qb, query);
     this.applySorting(qb, query.sort, 'product.');
@@ -73,7 +76,8 @@ export class ProductsRepository extends BaseRepository<Product> {
    * @throws CustomException if the product is not found.
    */
   async findOneById(id: string, manager?: EntityManager): Promise<Product> {
-    return await this.findEntityById(id, manager);
+    const relations = ['cartItems', 'comments', 'orderItems'];
+    return await this.findEntityById(id, relations, manager);
   }
 
   /**

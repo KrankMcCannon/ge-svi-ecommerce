@@ -64,7 +64,8 @@ export class OrdersRepository extends BaseRepository<Order> {
     orderId: string,
     manager?: EntityManager,
   ): Promise<Order> {
-    return await this.findEntityById(orderId, manager);
+    const relations = ['orderItems'];
+    return await this.findEntityById(orderId, relations, manager);
   }
 
   /**

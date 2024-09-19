@@ -94,7 +94,7 @@ export class UserDTO {
       user.cart = new Cart();
       user.cart.id = dto.cart.id;
     }
-    if (!dto.orders && dto.orders?.length > 0) {
+    if (dto.orders && dto.orders?.length > 0) {
       user.orders = dto.orders.map(OrderDTO.toEntity);
     }
     return user;

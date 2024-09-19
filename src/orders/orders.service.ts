@@ -31,7 +31,7 @@ export class OrdersService {
     await queryRunner.startTransaction();
 
     try {
-      const cart = await this.cartsService.findCartOrFail(userId);
+      const cart = await this.cartsService.findCartByUserId(userId);
       const cartEntity = CartDTO.toEntity(cart);
       const cartItems = await this.cartsService.findCartItems(cart.id);
 
