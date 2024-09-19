@@ -152,16 +152,20 @@ export class CartsService {
    */
   async findCartItems(
     cartId: string,
-    pagination?: PaginationInfo,
-    sort?: string,
-    filter?: any,
+    options?: {
+      pagination?: PaginationInfo;
+      sort?: string;
+      filter?: any;
+    },
+    manager?: EntityManager,
   ): Promise<CartItemDTO[]> {
     const cartItems = await this.cartItemRepository.findCartItems(
       cartId,
-      pagination,
+      manager,
       {
-        sort,
-        ...filter,
+        sort: options.sort,
+        ...options.pagination,
+        ...options.filter,
       },
     );
     return cartItems.map(CartItemDTO.fromEntity);

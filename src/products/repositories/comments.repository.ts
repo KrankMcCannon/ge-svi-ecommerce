@@ -56,17 +56,28 @@ export class CommentRepository extends BaseRepository<Comment> {
    * Retrieves all comments for a product with pagination.
    *
    * @param productId The ID of the product.
-   * @param pagination Pagination information.
+   * @param query Optional query parameters.
+   * @param manager Optional transaction manager.
    * @returns List of comments.
    */
   async findAllComments(
     productId: string,
-    pagination: PaginationInfo,
+    query?: {
+      pagination: PaginationInfo;
+      sort: string;
+      filter: any;
+    },
+    manager?: EntityManager,
   ): Promise<Comment[]> {
-    const qb = this.commentRepo.createQueryBuilder('comment');
+    const repo = manager ? manager.getRepository(Comment) : this.commentRepo;
+    const qb = repo.createQueryBuilder('comment');
     qb.where('comment.productId = :productId', { productId });
-    qb.orderBy('comment.createdAt', 'DESC');
-    this.applyPagination(qb, pagination);
+    qb.innerJoinAndSelect('comment.product', 'product');
+
+    this.applySorting(qb, query.sort);
+    this.applyFilters(qb, query.filter);
+    this.applyPagination(qb, query.pagination);
+
     return await qb.getMany();
   }
 

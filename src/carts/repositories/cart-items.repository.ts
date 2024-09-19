@@ -58,22 +58,24 @@ export class CartItemsRepository extends BaseRepository<CartItem> {
    * Retrieves all cart items for a user.
    *
    * @param userId User's ID.
-   * @param pagination Pagination information.
+   * @param manager Optional transaction manager.
+   * @param query Optional query parameters.
    * @returns List of cart items.
    */
   async findCartItems(
     cartId: string,
-    pagination?: PaginationInfo,
-    query?: any,
+    manager?: EntityManager,
+    query?: { pagination: PaginationInfo; sort: string; filter: any },
   ): Promise<CartItem[]> {
-    const qb = this.cartItemRepo.createQueryBuilder('cartItem');
+    const repo = manager ? manager.getRepository(CartItem) : this.repo;
+    const qb = repo.createQueryBuilder('cartItem');
     qb.innerJoinAndSelect('cartItem.product', 'product')
       .innerJoin('cartItem.cart', 'cart')
       .where('cart.id = :cartId', { cartId });
 
-    this.applyFilters(qb, query);
+    this.applyFilters(qb, query.filter);
+    this.applyPagination(qb, query.pagination);
     this.applySorting(qb, query.sort);
-    this.applyPagination(qb, pagination);
 
     return await qb.getMany();
   }

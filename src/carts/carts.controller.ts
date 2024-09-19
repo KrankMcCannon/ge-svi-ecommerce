@@ -82,12 +82,11 @@ export class CartsController {
     @Query('sort') sort?: string,
     @Query() filter?: any,
   ): Promise<StandardList<CartItemDTO>> {
-    const cartItems = await this.cartsService.findCartItems(
-      id,
-      paginationInfo,
+    const cartItems = await this.cartsService.findCartItems(id, {
       sort,
-      filter,
-    );
+      ...paginationInfo,
+      ...filter,
+    });
     return new StandardList(cartItems, cartItems.length, paginationInfo);
   }
 

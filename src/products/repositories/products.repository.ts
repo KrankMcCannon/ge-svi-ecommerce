@@ -55,15 +55,20 @@ export class ProductsRepository extends BaseRepository<Product> {
    * @param pagination Pagination information.
    * @returns List of products.
    */
-  async findAll(query: any, pagination?: PaginationInfo): Promise<Product[]> {
-    const qb = this.productRepo.createQueryBuilder('product');
+  async findAll(
+    query?: { pagination: PaginationInfo; sort: string; filter: any },
+    manager?: EntityManager,
+  ): Promise<Product[]> {
+    const repo = manager ? manager.getRepository(Product) : this.productRepo;
+    const qb = repo.createQueryBuilder('product');
     qb.leftJoinAndSelect('product.cartItems', 'cartItems')
       .leftJoinAndSelect('product.comments', 'comments')
       .leftJoinAndSelect('product.orderItems', 'orderItems');
 
-    this.applyFilters(qb, query);
+    this.applyFilters(qb, query.filter);
+    this.applyPagination(qb, query.pagination);
     this.applySorting(qb, query.sort, 'product.');
-    this.applyPagination(qb, pagination);
+
     return await qb.getMany();
   }
 

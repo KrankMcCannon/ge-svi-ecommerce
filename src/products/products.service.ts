@@ -51,14 +51,10 @@ export class ProductsService {
    * @returns List of products.
    */
   async findAllProducts(
-    pagination?: PaginationInfo,
-    sort?: string,
-    filter?: any,
+    query?: { pagination: PaginationInfo; sort: string; filter: any },
+    manager?: EntityManager,
   ): Promise<ProductDTO[]> {
-    const products = await this.productsRepo.findAll(
-      { sort, ...filter },
-      pagination,
-    );
+    const products = await this.productsRepo.findAll(query, manager);
     return products && products.length > 0
       ? products.map(ProductDTO.fromEntity)
       : [];
@@ -180,18 +176,25 @@ export class ProductsService {
    * Finds all comments for a product.
    *
    * @param productId - Product ID.
-   * @param paginationInfo - Pagination information.
+   * @param pagination - Pagination information.
+   * @param filter - Filters.
+   * @param sort - Sorting options.
    * @returns List of comments.
    */
   async findAllComments(
     productId: string,
-    paginationInfo: PaginationInfo,
+    options?: {
+      pagination?: PaginationInfo;
+      sort?: string;
+      filter?: any;
+    },
   ): Promise<CommentDTO[]> {
     await this.findProductById(productId);
-    const comments = await this.commentRepo.findAllComments(
-      productId,
-      paginationInfo,
-    );
+    const comments = await this.commentRepo.findAllComments(productId, {
+      pagination: options?.pagination,
+      sort: options?.sort,
+      filter: options?.filter,
+    });
     return comments && comments.length > 0
       ? comments.map(CommentDTO.fromEntity)
       : [];

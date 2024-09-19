@@ -67,11 +67,11 @@ export class ProductsController {
     @Query('sort') sort?: string,
     @Query() filter?: any,
   ): Promise<StandardList<ProductDTO>> {
-    const products = await this.productsService.findAllProducts(
-      paginationInfo,
+    const products = await this.productsService.findAllProducts({
+      pagination: paginationInfo,
       sort,
       filter,
-    );
+    });
     return new StandardList(products, products.length, paginationInfo);
   }
 
@@ -145,11 +145,14 @@ export class ProductsController {
   async findAllComments(
     @Param('id', new ParseUUIDPipe()) productId: string,
     @Query(new PaginationInfoPipe()) paginationInfo: PaginationInfo,
+    @Query('sort') sort?: string,
+    @Query() filter?: any,
   ): Promise<StandardList<CommentDTO>> {
-    const comments = await this.productsService.findAllComments(
-      productId,
-      paginationInfo,
-    );
+    const comments = await this.productsService.findAllComments(productId, {
+      pagination: paginationInfo,
+      sort,
+      filter,
+    });
     return new StandardList(comments, comments.length, paginationInfo);
   }
 }

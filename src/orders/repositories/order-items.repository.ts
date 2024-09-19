@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BaseRepository } from 'src/base.repository';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
+import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { EntityManager, Repository } from 'typeorm';
 import { OrderItem } from '../entities/order-item.entity';
 
@@ -48,13 +49,30 @@ export class OrderItemsRepository extends BaseRepository<OrderItem> {
    * Finds all order items for an order.
    *
    * @param orderId - Order ID.
+   * @param manager - Optional transaction manager.
+   * @param query - Optional query parameters.
    * @returns List of order items.
    * @throws CustomException if there is an error finding the order items.
    */
-  async findOrderItemsByOrderId(orderId: string): Promise<OrderItem[]> {
-    return await this.orderItemsRepo.find({
-      where: { order: { id: orderId } },
-    });
+  async findOrderItemsByOrderId(
+    orderId: string,
+    manager?: EntityManager,
+    query?: { pagination: PaginationInfo; sort: string; filter: any },
+  ): Promise<OrderItem[]> {
+    const repo = manager
+      ? manager.getRepository(OrderItem)
+      : this.orderItemsRepo;
+
+    const qb = repo.createQueryBuilder('orderItem');
+    qb.where('orderItem.orderId = :orderId', { orderId })
+      .leftJoinAndSelect('orderItem.product', 'product')
+      .leftJoinAndSelect('orderItem.order', 'order');
+
+    this.applyFilters(qb, query?.filter);
+    this.applyPagination(qb, query?.pagination);
+    this.applySorting(qb, query?.sort, 'orderItem.');
+
+    return await qb.getMany();
   }
 
   /**
