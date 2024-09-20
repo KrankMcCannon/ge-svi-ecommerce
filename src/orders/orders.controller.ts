@@ -1,7 +1,9 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Request,
@@ -19,6 +21,7 @@ import {
 import { JwtAuthGuard } from 'src/config/strategies/jwt-auth.guard';
 import { RolesGuard } from 'src/config/strategies/roles.guard';
 import { OrderDTO } from './dtos/order.dto';
+import { OrderStatus } from './enum';
 import { OrdersService } from './orders.service';
 
 @ApiTags('Orders')
@@ -62,6 +65,18 @@ export class OrdersController {
     @Param('id') id: string,
   ): Promise<StandardResponse<OrderDTO>> {
     const order = await this.ordersService.findOrderById(id);
+    return new StandardResponse(order);
+  }
+
+  @Patch(':id')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Update an order status by id' })
+  @ApiStandardResponse({ type: OrderDTO, description: 'Order updated' })
+  async updateOrderStatus(
+    @Param('id') id: string,
+    @Body() status: OrderStatus,
+  ): Promise<StandardResponse<OrderDTO>> {
+    const order = await this.ordersService.updateOrderStatus(id, status);
     return new StandardResponse(order);
   }
 }

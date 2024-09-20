@@ -131,6 +131,32 @@ The project is configured to run all necessary services using **Docker Compose**
 
 ---
 
+## Postman Collection
+
+To simplify API testing, a Postman Collection has been provided.
+
+### Using the Postman Collection
+
+1. Download and import the Postman Collection and Environment:
+   - [Download Collection](./postman/ge-svi-ecommerce.postman_collection.json)
+   - [Download Environment](./postman/ge-svi-ecommerce.postman_environment.json)
+
+2. Open Postman and import the files by clicking the "Import" button in the top-left corner.
+
+### Authentication Flow in Postman
+
+- First, call the **Register** endpoint.
+- Second, call the **Login** endpoint.
+- After receiving the **access token** from the response, Postman will automatically set the `access_token` environment variable.
+- The token will be included in subsequent requests to endpoints that require authentication.
+
+To manually set or reset environment variables in Postman:
+1. Go to the "Environments" tab.
+2. Select the **Ge SVI E-Commerce** environment.
+3. Manually add or update the **access_token**.
+
+---
+
 ## Accessing Services
 
 ### 1. **Main Application (API)**
