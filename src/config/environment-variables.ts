@@ -206,4 +206,34 @@ export class EnvironmentVariables {
   static get MAILGUN_PORT(): number {
     return __getNumberWithDefault(process.env.MAILGUN_PORT, 587);
   }
+
+  /**
+   * Mailgun host
+   * Default: 'smtp.mailgun.org'
+   * @returns {string} The host for Mailgun (MAILGUN_HOST)
+   */
+  static get MAILGUN_HOST(): string {
+    return __getStringWithDefault(process.env.MAILGUN_HOST, 'smtp.mailgun.org');
+  }
+
+  /**
+   * RabbitMQ URI
+   * Default: 'amqp://rabbitmq:rabbitmq@localhost:5672'
+   * @returns {string} The URI for RabbitMQ (RABBITMQ_URI)
+   */
+  static get RABBITMQ_URI(): string {
+    return __getStringWithDefault(
+      process.env.RABBITMQ_URI,
+      'amqp://rabbitmq:rabbitmq@localhost:5672',
+    );
+  }
+
+  /**
+   * RabbitMQ queue
+   * Default: 'email'
+   * @returns {string} The queue for RabbitMQ (RABBITMQ_QUEUE)
+   */
+  static get RABBITMQ_QUEUE(): string {
+    return __getStringWithDefault(process.env.RABBITMQ_QUEUE, 'email');
+  }
 }

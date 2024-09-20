@@ -112,13 +112,13 @@ export class UsersService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      if (!(error instanceof CustomException)) {
-        throw CustomException.fromErrorEnum(Errors.E_0024_USER_REMOVE_ERROR, {
-          data: { id },
-          originalError: error,
-        });
+      if (error instanceof CustomException) {
+        throw error;
       }
-      throw error;
+      throw CustomException.fromErrorEnum(Errors.E_0024_USER_REMOVE_ERROR, {
+        data: { id },
+        originalError: error,
+      });
     } finally {
       await queryRunner.release();
     }
