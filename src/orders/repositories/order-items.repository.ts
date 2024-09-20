@@ -36,7 +36,7 @@ export class OrderItemsRepository extends BaseRepository<OrderItem> {
       return await this.saveEntity(orderItem, manager);
     } catch (error) {
       throw CustomException.fromErrorEnum(
-        Errors.E_0032_ORDER_ITEM_CREATION_ERROR,
+        Errors.E_0063_ORDER_ITEM_CREATION_ERROR,
         {
           data: { inputOrderItem },
           originalError: error,

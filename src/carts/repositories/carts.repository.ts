@@ -81,7 +81,7 @@ export class CartsRepository extends BaseRepository<Cart> {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0012_CART_ADD_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0020_CART_ADD_ERROR, {
         data: { user, product, quantity },
         originalError: error,
       });
@@ -146,7 +146,7 @@ export class CartsRepository extends BaseRepository<Cart> {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0014_CART_REMOVE_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0022_CART_REMOVE_ERROR, {
         data: { id: cartId },
         originalError: error,
       });
@@ -166,7 +166,7 @@ export class CartsRepository extends BaseRepository<Cart> {
     try {
       return await repo.save(cart);
     } catch (error) {
-      throw CustomException.fromErrorEnum(Errors.E_0012_CART_ADD_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0023_CART_SAVE_ERROR, {
         data: { cart },
         originalError: error,
       });
@@ -196,7 +196,7 @@ export class CartsRepository extends BaseRepository<Cart> {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0014_CART_REMOVE_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0022_CART_REMOVE_ERROR, {
         data: { id: cartId },
         originalError: error,
       });

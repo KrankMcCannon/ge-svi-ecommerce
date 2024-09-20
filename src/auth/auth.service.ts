@@ -36,7 +36,7 @@ export class AuthService {
         user.password,
       );
       if (!isPasswordValid) {
-        throw CustomException.fromErrorEnum(Errors.E_0027_INVALID_USER, {
+        throw CustomException.fromErrorEnum(Errors.E_0045_INVALID_USER, {
           data: { email: inputEmail, password: inputPassword },
         });
       }
@@ -46,7 +46,7 @@ export class AuthService {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0027_INVALID_USER, {
+      throw CustomException.fromErrorEnum(Errors.E_0045_INVALID_USER, {
         data: { email: inputEmail, password: inputPassword },
         originalError: error,
       });
@@ -96,7 +96,7 @@ export class AuthService {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0026_DUPLICATE_USER, {
+      throw CustomException.fromErrorEnum(Errors.E_0044_DUPLICATE_USER, {
         data: { email: createUserDto.email },
         originalError: error,
       });

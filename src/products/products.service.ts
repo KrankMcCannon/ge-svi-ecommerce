@@ -33,7 +33,7 @@ export class ProductsService {
         throw error;
       }
       throw CustomException.fromErrorEnum(
-        Errors.E_0006_PRODUCT_CREATION_ERROR,
+        Errors.E_0010_PRODUCT_CREATION_ERROR,
         {
           data: { product: createProductDto },
           originalError: error,
@@ -55,9 +55,7 @@ export class ProductsService {
     manager?: EntityManager,
   ): Promise<ProductDTO[]> {
     const products = await this.productsRepo.findAll(query, manager);
-    return products && products.length > 0
-      ? products.map(ProductDTO.fromEntity)
-      : [];
+    return products.map(ProductDTO.fromEntity);
   }
 
   /**
@@ -103,7 +101,7 @@ export class ProductsService {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0007_PRODUCT_UPDATE_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0011_PRODUCT_UPDATE_ERROR, {
         data: { id, updateProductDto },
         originalError: error,
       });
@@ -130,7 +128,7 @@ export class ProductsService {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0008_PRODUCT_REMOVE_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0012_PRODUCT_REMOVE_ERROR, {
         data: { id },
         originalError: error,
       });

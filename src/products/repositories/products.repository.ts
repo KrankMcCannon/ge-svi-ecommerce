@@ -39,7 +39,7 @@ export class ProductsRepository extends BaseRepository<Product> {
         throw error;
       }
       throw CustomException.fromErrorEnum(
-        Errors.E_0006_PRODUCT_CREATION_ERROR,
+        Errors.E_0010_PRODUCT_CREATION_ERROR,
         {
           data: { product: createProductDto },
           originalError: error,
@@ -96,7 +96,7 @@ export class ProductsRepository extends BaseRepository<Product> {
     try {
       return await this.productRepo.findOne({ where: { name } });
     } catch (error) {
-      throw CustomException.fromErrorEnum(Errors.E_0009_PRODUCT_NOT_FOUND, {
+      throw CustomException.fromErrorEnum(Errors.E_0013_PRODUCT_NOT_FOUND, {
         data: { name },
         originalError: error,
       });
@@ -125,7 +125,7 @@ export class ProductsRepository extends BaseRepository<Product> {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0007_PRODUCT_UPDATE_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0011_PRODUCT_UPDATE_ERROR, {
         data: { id, updateProductDto },
         originalError: error,
       });
@@ -148,7 +148,7 @@ export class ProductsRepository extends BaseRepository<Product> {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0008_PRODUCT_REMOVE_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0012_PRODUCT_REMOVE_ERROR, {
         data: { id },
         originalError: error,
       });
@@ -174,13 +174,10 @@ export class ProductsRepository extends BaseRepository<Product> {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(
-        Errors.E_0006_PRODUCT_CREATION_ERROR,
-        {
-          data: { product },
-          originalError: error,
-        },
-      );
+      throw CustomException.fromErrorEnum(Errors.E_0014_PRODUCT_SAVE_ERROR, {
+        data: { product },
+        originalError: error,
+      });
     }
   }
 }

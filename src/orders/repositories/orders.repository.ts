@@ -46,7 +46,7 @@ export class OrdersRepository extends BaseRepository<Order> {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0028_ORDER_CREATION_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0060_ORDER_CREATION_ERROR, {
         data: { orderItems },
         originalError: error,
       });
@@ -119,7 +119,7 @@ export class OrdersRepository extends BaseRepository<Order> {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0030_ORDER_SAVE_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0062_ORDER_UPDATE_ERROR, {
         data: { id: orderId },
         originalError: error,
       });

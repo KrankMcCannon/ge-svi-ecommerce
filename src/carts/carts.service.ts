@@ -33,7 +33,7 @@ export class CartsService {
   async createCart(userId: string, manager?: EntityManager): Promise<CartDTO> {
     const user = await this.usersService.findById(userId);
     if (!user) {
-      throw CustomException.fromErrorEnum(Errors.E_0025_USER_NOT_FOUND, {
+      throw CustomException.fromErrorEnum(Errors.E_0043_USER_NOT_FOUND, {
         data: { id: userId },
       });
     }
@@ -77,7 +77,7 @@ export class CartsService {
       const productEntity = ProductDTO.toEntity(product);
 
       if (addProductToCartDto.quantity > product.stock) {
-        throw CustomException.fromErrorEnum(Errors.E_0010_INSUFFICIENT_STOCK, {
+        throw CustomException.fromErrorEnum(Errors.E_0015_INSUFFICIENT_STOCK, {
           data: { productId: addProductToCartDto.productId },
         });
       }
@@ -103,7 +103,7 @@ export class CartsService {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0012_CART_ADD_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0020_CART_ADD_ERROR, {
         data: { userId, addProductToCartDto },
       });
     } finally {
@@ -124,7 +124,7 @@ export class CartsService {
   ): Promise<CartDTO> {
     const cart = await this.cartsRepository.findCartByUserId(userId, manager);
     if (!cart) {
-      throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
+      throw CustomException.fromErrorEnum(Errors.E_0025_CART_NOT_FOUND, {
         data: { userId },
       });
     }
@@ -137,7 +137,7 @@ export class CartsService {
   ): Promise<CartDTO> {
     const cart = await this.cartsRepository.findCartById(cartId, manager);
     if (!cart) {
-      throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
+      throw CustomException.fromErrorEnum(Errors.E_0025_CART_NOT_FOUND, {
         data: { id: cartId },
       });
     }
@@ -188,7 +188,7 @@ export class CartsService {
       );
 
       if (cartItem.cart.id !== cart.id) {
-        throw CustomException.fromErrorEnum(Errors.E_0015_CART_ITEM_NOT_FOUND, {
+        throw CustomException.fromErrorEnum(Errors.E_0021_CART_FETCH_ERROR, {
           data: { id: cartItemId },
         });
       }
@@ -219,7 +219,7 @@ export class CartsService {
       if (error instanceof CustomException) {
         throw error;
       }
-      CustomException.fromErrorEnum(Errors.E_0014_CART_REMOVE_ERROR, {
+      CustomException.fromErrorEnum(Errors.E_0022_CART_REMOVE_ERROR, {
         data: { id: cartItemId },
       });
     } finally {
@@ -241,7 +241,7 @@ export class CartsService {
       if (error instanceof CustomException) {
         throw error;
       }
-      CustomException.fromErrorEnum(Errors.E_0014_CART_REMOVE_ERROR, {
+      CustomException.fromErrorEnum(Errors.E_0022_CART_REMOVE_ERROR, {
         data: { id: cartId },
       });
     }
@@ -261,7 +261,7 @@ export class CartsService {
       if (error instanceof CustomException) {
         throw error;
       }
-      CustomException.fromErrorEnum(Errors.E_0014_CART_REMOVE_ERROR, {
+      CustomException.fromErrorEnum(Errors.E_0022_CART_REMOVE_ERROR, {
         data: { id: cartId },
       });
     }

@@ -28,7 +28,7 @@ export class BaseRepository<Entity> {
     try {
       return await repo.save(entity);
     } catch (error) {
-      throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0007_SAVE_ERROR, {
         data: { entity },
         originalError: error,
       });
@@ -57,7 +57,7 @@ export class BaseRepository<Entity> {
       const { primaryColumns } = repo.metadata;
 
       if (primaryColumns.length !== 1) {
-        throw CustomException.fromErrorEnum(Errors.E_0005_INTEGRITY_ERROR, {
+        throw CustomException.fromErrorEnum(Errors.E_0008_BAD_REQUEST, {
           data: { id },
           originalError: new Error('Composite primary keys are not supported.'),
         });

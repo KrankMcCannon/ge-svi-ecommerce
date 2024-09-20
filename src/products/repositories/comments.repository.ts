@@ -43,7 +43,7 @@ export class CommentRepository extends BaseRepository<Comment> {
         throw error;
       }
       throw CustomException.fromErrorEnum(
-        Errors.E_0017_COMMENT_CREATION_ERROR,
+        Errors.E_0030_COMMENT_CREATION_ERROR,
         {
           data: { comment: createCommentDto },
           originalError: error,
@@ -95,14 +95,14 @@ export class CommentRepository extends BaseRepository<Comment> {
         where: { id },
       });
       if (!comment) {
-        throw CustomException.fromErrorEnum(Errors.E_0001_GENERIC_ERROR, {
+        throw CustomException.fromErrorEnum(Errors.E_0032_COMMENT_NOT_FOUND, {
           data: { id },
         });
       }
       await repo.delete(id);
     } catch (error) {
       throw CustomException.fromErrorEnum(
-        Errors.E_0021_COMMENT_DELETION_ERROR,
+        Errors.E_0034_COMMENT_DELETION_ERROR,
         {
           data: { id },
           originalError: error,

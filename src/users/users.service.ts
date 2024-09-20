@@ -85,7 +85,7 @@ export class UsersService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
       if (!(error instanceof CustomException)) {
-        throw CustomException.fromErrorEnum(Errors.E_0023_USER_UPDATE_ERROR, {
+        throw CustomException.fromErrorEnum(Errors.E_0041_USER_UPDATE_ERROR, {
           data: { id },
           originalError: error,
         });
@@ -115,7 +115,7 @@ export class UsersService {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0024_USER_REMOVE_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0042_USER_REMOVE_ERROR, {
         data: { id },
         originalError: error,
       });

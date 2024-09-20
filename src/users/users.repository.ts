@@ -26,7 +26,7 @@ export class UserRepository extends BaseRepository<User> {
     try {
       return await this.userRepo.findOne({ where: { email } });
     } catch (error) {
-      throw CustomException.fromErrorEnum(Errors.E_0025_USER_NOT_FOUND, {
+      throw CustomException.fromErrorEnum(Errors.E_0043_USER_NOT_FOUND, {
         data: { email },
         originalError: error,
       });
@@ -52,7 +52,7 @@ export class UserRepository extends BaseRepository<User> {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0022_USER_CREATION_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0040_USER_CREATION_ERROR, {
         data: { user: createUserDto },
         originalError: error,
       });
@@ -93,7 +93,7 @@ export class UserRepository extends BaseRepository<User> {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0023_USER_UPDATE_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0041_USER_UPDATE_ERROR, {
         data: { user: updateUserDto },
         originalError: error,
       });
@@ -111,7 +111,7 @@ export class UserRepository extends BaseRepository<User> {
     try {
       const result = await repo.delete(id);
       if (result.affected === 0) {
-        throw CustomException.fromErrorEnum(Errors.E_0025_USER_NOT_FOUND, {
+        throw CustomException.fromErrorEnum(Errors.E_0043_USER_NOT_FOUND, {
           data: { id },
         });
       }
@@ -119,7 +119,7 @@ export class UserRepository extends BaseRepository<User> {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0024_USER_REMOVE_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0042_USER_REMOVE_ERROR, {
         data: { id },
         originalError: error,
       });
@@ -140,7 +140,7 @@ export class UserRepository extends BaseRepository<User> {
       if (error instanceof CustomException) {
         throw error;
       }
-      throw CustomException.fromErrorEnum(Errors.E_0022_USER_CREATION_ERROR, {
+      throw CustomException.fromErrorEnum(Errors.E_0046_USER_SAVE_ERROR, {
         data: { user },
         originalError: error,
       });
