@@ -26,7 +26,7 @@ services:
       - rabbitmq
     volumes:
       - ./src:/usr/src/app/src
-    command: yarn run start
+    command: bash -c "yarn run migration:run && yarn run start"
 
   # Microservice
   microservice:
@@ -41,7 +41,7 @@ services:
       - rabbitmq
     volumes:
       - ./microservice:/usr/src/app/microservice
-    command: yarn run start
+    command: yarn run start:microservice
 
   # PostgreSQL service
   postgres:

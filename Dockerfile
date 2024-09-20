@@ -20,6 +20,9 @@ RUN yarn install --frozen-lockfile
 COPY ./tsconfig.json ./tsconfig.build.json ./
 COPY ./src ./src
 
+# Build the TypeScript files
+RUN yarn build
+
 # Stage 2: Run the application
 FROM node:18-bullseye-slim as runner
 
@@ -35,5 +38,5 @@ COPY --from=builder /usr/src/app /usr/src/app
 # Expose application port
 EXPOSE 3000
 
-# Start the main application using the production mode
-CMD ["yarn", "run", "start"]
+# Run migrations before starting the app
+CMD yarn run migration:run && yarn run start:prod
