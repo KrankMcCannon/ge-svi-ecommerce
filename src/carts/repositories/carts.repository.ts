@@ -61,17 +61,6 @@ export class CartsRepository extends BaseRepository<Cart> {
       );
 
       if (cartItem) {
-        if (
-          cart.cartItems &&
-          cart.cartItems.some((ci) => ci.id === cartItem.id)
-        ) {
-          throw CustomException.fromErrorEnum(Errors.E_0012_CART_ADD_ERROR, {
-            data: {
-              user: { id: user.id },
-              productId: product.id,
-            },
-          });
-        }
         cartItem.quantity += quantity;
         await this.cartItemsRepo.saveCartItem(cartItem, manager);
       } else {

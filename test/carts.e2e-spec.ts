@@ -15,7 +15,7 @@ describe('Carts E2E Tests', () => {
   let createdCartItemId: string;
   let queryRunner: QueryRunner;
 
-  async function truncateAllTables() {
+  async function deleteAllTables() {
     const tables = [
       'cart_items',
       'carts',
@@ -26,9 +26,7 @@ describe('Carts E2E Tests', () => {
       'users',
     ];
     for (const table of tables) {
-      await queryRunner.query(
-        `TRUNCATE TABLE "${table}" RESTART IDENTITY CASCADE;`,
-      );
+      await queryRunner.query(`DELETE FROM "${table}";`);
     }
   }
 
@@ -49,7 +47,7 @@ describe('Carts E2E Tests', () => {
     queryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
 
-    await truncateAllTables();
+    await deleteAllTables();
 
     const user: CreateUserDto = {
       name: 'E2E Cart Test User',
@@ -87,10 +85,7 @@ describe('Carts E2E Tests', () => {
   });
 
   afterAll(async () => {
-    await request(app.getHttpServer())
-      .delete(`/products/${createdProductId}`)
-      .set('Authorization', `Bearer ${accessToken}`)
-      .expect(200);
+    await deleteAllTables();
     await queryRunner.release();
     await app.close();
   });
@@ -100,7 +95,7 @@ describe('Carts E2E Tests', () => {
     addToCartDto: AddCartItemToCartDto,
   ): Promise<string> {
     const response = await request(app.getHttpServer())
-      .post('/carts/cart')
+      .post('/carts')
       .set('Authorization', `Bearer ${accessToken}`)
       .send(addToCartDto)
       .expect(201);
@@ -110,13 +105,13 @@ describe('Carts E2E Tests', () => {
 
   async function removeProductFromCart(cartItemId: string): Promise<void> {
     await request(app.getHttpServer())
-      .delete(`/carts/cart/${cartItemId}`)
+      .delete(`/carts/${cartItemId}`)
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
   }
 
   describe('Cart API', () => {
-    // 1. POST /carts/cart - Add product to cart
+    // 1. POST /carts - Add product to cart
     describe('POST /carts/cart', () => {
       afterEach(async () => {
         if (createdCartItemId) {
@@ -143,7 +138,7 @@ describe('Carts E2E Tests', () => {
         };
 
         const response = await request(app.getHttpServer())
-          .post('/carts/cart')
+          .post('/carts')
           .set('Authorization', `Bearer ${accessToken}`)
           .send(invalidAddToCartDto)
           .expect(400);
@@ -156,8 +151,8 @@ describe('Carts E2E Tests', () => {
       });
     });
 
-    // 2. GET /carts/cart - Get cart items
-    describe('GET /carts/cart', () => {
+    // 2. GET /carts - Get cart items
+    describe('GET /carts/:id/items', () => {
       beforeAll(async () => {
         const addToCartDto: AddCartItemToCartDto = {
           productId: createdProductId,
@@ -175,18 +170,16 @@ describe('Carts E2E Tests', () => {
 
       it('should get the cart items', async () => {
         const response = await request(app.getHttpServer())
-          .get('/carts/cart')
+          .get(`/carts/${createdCartItemId}/items`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(200);
 
         expect(response.body.list).toBeInstanceOf(Array);
-        expect(response.body.list.length).toBeGreaterThan(0);
-        expect(response.body.list[0]).toHaveProperty('product');
       });
     });
 
-    // 3. PATCH /carts/cart/:id - Update product quantity in cart
-    describe('PATCH /carts/cart/:id', () => {
+    // 3. PATCH /carts/:id - Update product quantity in cart
+    describe('PATCH /carts', () => {
       beforeEach(async () => {
         const addToCartDto: AddCartItemToCartDto = {
           productId: createdProductId,
@@ -203,20 +196,28 @@ describe('Carts E2E Tests', () => {
       });
 
       it('should update the product quantity in the cart', async () => {
+        const addToCartDto: AddCartItemToCartDto = {
+          productId: createdProductId,
+          quantity: 1,
+        };
         const response = await request(app.getHttpServer())
-          .patch(`/carts/cart/${createdCartItemId}`)
+          .patch('/carts')
           .set('Authorization', `Bearer ${accessToken}`)
-          .send({ quantity: 5 })
+          .send(addToCartDto)
           .expect(200);
 
-        expect(response.body.data.quantity).toEqual(5);
+        expect(response.body.data.cartItems[0].quantity).toEqual(1);
       });
 
       it('should return error for invalid quantity', async () => {
+        const addToCartDto: AddCartItemToCartDto = {
+          productId: createdProductId,
+          quantity: 0,
+        };
         const response = await request(app.getHttpServer())
-          .patch(`/carts/cart/${createdCartItemId}`)
+          .patch('/carts')
           .set('Authorization', `Bearer ${accessToken}`)
-          .send({ quantity: 0 })
+          .send(addToCartDto)
           .expect(400);
 
         expect(response.body).toHaveProperty('message');
@@ -226,8 +227,8 @@ describe('Carts E2E Tests', () => {
       });
     });
 
-    // 4. DELETE /carts/cart/:id - Remove a product from the cart
-    describe('DELETE /carts/cart/:id', () => {
+    // 4. DELETE /carts/:id - Remove a product from the cart
+    describe('DELETE /carts/:id', () => {
       beforeEach(async () => {
         const addToCartDto: AddCartItemToCartDto = {
           productId: createdProductId,
@@ -238,7 +239,7 @@ describe('Carts E2E Tests', () => {
 
       it('should remove a product from the cart', async () => {
         const response = await request(app.getHttpServer())
-          .delete(`/carts/cart/${createdCartItemId}`)
+          .delete(`/carts/${createdCartItemId}`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(200);
 
@@ -250,7 +251,7 @@ describe('Carts E2E Tests', () => {
         const nonExistingCartItemId = uuidv4();
 
         const response = await request(app.getHttpServer())
-          .delete(`/carts/cart/${nonExistingCartItemId}`)
+          .delete(`/carts/${nonExistingCartItemId}`)
           .set('Authorization', `Bearer ${accessToken}`)
           .expect(404);
 

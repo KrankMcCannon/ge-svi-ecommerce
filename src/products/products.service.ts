@@ -189,14 +189,12 @@ export class ProductsService {
       filter?: any;
     },
   ): Promise<CommentDTO[]> {
-    await this.findProductById(productId);
-    const comments = await this.commentRepo.findAllComments(productId, {
+    const product = await this.findProductById(productId);
+    const comments = await this.commentRepo.findAllComments(product.id, {
       pagination: options?.pagination,
       sort: options?.sort,
       filter: options?.filter,
     });
-    return comments && comments.length > 0
-      ? comments.map(CommentDTO.fromEntity)
-      : [];
+    return comments.map(CommentDTO.fromEntity);
   }
 }

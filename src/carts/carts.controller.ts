@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   Request,
@@ -41,8 +42,8 @@ export class CartsController {
   })
   @UsePipes(new ValidationPipe({ whitelist: true }))
   async createCartOrAddToCart(
-    @Body() addCartItemToCartDto: AddCartItemToCartDto,
     @Request() req: any,
+    @Body() addCartItemToCartDto: AddCartItemToCartDto,
   ): Promise<StandardResponse<CartDTO>> {
     const cart = await this.cartsService.createCartOrAddToCart(
       req.user.id,
@@ -64,6 +65,26 @@ export class CartsController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<StandardResponse<CartDTO>> {
     const cart = await this.cartsService.findCartById(id);
+    return new StandardResponse(cart);
+  }
+
+  @Patch()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('user', 'admin')
+  @ApiOperation({ summary: 'Update the cart' })
+  @ApiStandardResponse({
+    type: CartDTO,
+    description: 'Update the cart',
+  })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async updateCart(
+    @Request() req: any,
+    @Body() cartDto: AddCartItemToCartDto,
+  ): Promise<StandardResponse<CartDTO>> {
+    const cart = await this.cartsService.createCartOrAddToCart(
+      req.user.id,
+      cartDto,
+    );
     return new StandardResponse(cart);
   }
 

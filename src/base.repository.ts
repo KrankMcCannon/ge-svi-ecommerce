@@ -46,30 +46,36 @@ export class BaseRepository<Entity> {
    */
   protected async findEntityById(
     id: any,
-    relations?: string[],
+    relations: string[] = [],
     manager?: EntityManager,
   ): Promise<Entity> {
     const repo = manager
       ? manager.getRepository<Entity>(this.repo.metadata.target)
       : this.repo;
+
     try {
       const { primaryColumns } = repo.metadata;
+
       if (primaryColumns.length !== 1) {
         throw CustomException.fromErrorEnum(Errors.E_0005_INTEGRITY_ERROR, {
           data: { id },
           originalError: new Error('Composite primary keys are not supported.'),
         });
       }
+
       const primaryKey = primaryColumns[0].propertyName as keyof Entity;
+
       const entity = await repo.findOne({
         where: { [primaryKey]: id } as any,
         relations,
       });
+
       if (!entity) {
         throw CustomException.fromErrorEnum(Errors.E_0002_NOT_FOUND_ERROR, {
           data: { id },
         });
       }
+
       return entity;
     } catch (error) {
       if (error instanceof CustomException) {
