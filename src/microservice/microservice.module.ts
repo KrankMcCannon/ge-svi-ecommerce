@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { RmqModule } from '../rmq.module';
-import { EmailConsumerService } from './email-consumer.service';
+import { EmailController } from './email.controller';
+import { EmailService } from './email.service';
 
 @Module({
   imports: [RmqModule],
-  providers: [EmailConsumerService],
+  controllers: [EmailController],
+  providers: [EmailService],
 })
 export class MicroserviceModule {}

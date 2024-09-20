@@ -7,7 +7,6 @@ import { AuthModule } from './auth/auth.module';
 import { CartsModule } from './carts/carts.module';
 import { EnvironmentVariables } from './config/environment-variables';
 import { JwtAuthGuard } from './config/strategies/jwt-auth.guard';
-import { TestDataSource } from './data-source-test';
 import { EmailModule } from './email/email.module';
 import { OrdersModule } from './orders/orders.module';
 import { ProductsModule } from './products/products.module';
@@ -17,16 +16,6 @@ import { UsersModule } from './users/users.module';
   imports: [
     TypeOrmModule.forRootAsync({
       useFactory: async () => {
-        const isTestEnv = process.env.NODE_ENV === 'test';
-        if (isTestEnv) {
-          if (!TestDataSource.isInitialized) {
-            await TestDataSource.initialize();
-          }
-          return {
-            ...TestDataSource.options,
-          };
-        }
-
         return {
           type: 'postgres',
           host: EnvironmentVariables.DATABASE_HOST,
