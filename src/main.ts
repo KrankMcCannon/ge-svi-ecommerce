@@ -7,6 +7,7 @@ import {
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { EnvironmentVariables } from './config/environment-variables';
+import { getRabbitMQOptions } from './rabbitmq.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -25,6 +26,10 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
+
+  app.connectMicroservice(getRabbitMQOptions());
+
+  await app.startAllMicroservices();
 
   await app.listen(EnvironmentVariables.PORT, EnvironmentVariables.IP);
 }

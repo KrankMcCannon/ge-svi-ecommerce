@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CartsService } from 'src/carts/carts.service';
 import { CartDTO, CartItemDTO } from 'src/carts/dtos';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
+import { EmailProducerService } from 'src/email/email-producer.service';
 import { ProductDTO } from 'src/products/dtos';
 import { ProductsService } from 'src/products/products.service';
 import { DataSource, EntityManager } from 'typeorm';
@@ -17,6 +18,7 @@ export class OrdersService {
   constructor(
     private readonly cartsService: CartsService,
     private readonly productsService: ProductsService,
+    private readonly emailProducerService: EmailProducerService,
     private readonly ordersRepo: OrdersRepository,
     private readonly orderItemsRepo: OrderItemsRepository,
     private readonly dataSource: DataSource,
@@ -47,6 +49,8 @@ export class OrdersService {
       );
 
       const orderItems: OrderItem[] = [];
+      let totalPrice = 0;
+      let orderDetails = `Your order details:\n\n`;
       for await (const cartItem of cartItems) {
         const product = await this.productsService.findProductById(
           cartItem.product.id,
@@ -63,6 +67,12 @@ export class OrdersService {
           queryRunner.manager,
         );
         orderItems.push(orderItem);
+
+        orderDetails += `Product: ${productEntity.name}\n`;
+        orderDetails += `Quantity: ${cartItemEntity.quantity}\n`;
+        orderDetails += `Price: $${productEntity.price.toFixed(2)}\n\n`;
+
+        totalPrice += cartItemEntity.quantity * productEntity.price;
       }
 
       const order = await this.ordersRepo.createOrder(
@@ -74,6 +84,13 @@ export class OrdersService {
       await this.cartsService.deleteCart(cartEntity.id, queryRunner.manager);
 
       await queryRunner.commitTransaction();
+
+      orderDetails += `Total Price: $${totalPrice.toFixed(2)}\n\nThank you for your purchase!`;
+      await this.emailProducerService.sendEmailTask({
+        email: cartEntity.user.email,
+        subject: 'Order Confirmation',
+        message: `Your order has been successfully placed!\n\nOrder ID: ${order.id}\n\n${orderDetails}`,
+      });
 
       return OrderDTO.fromEntity(order);
     } catch (error) {
@@ -158,6 +175,21 @@ export class OrdersService {
     status: OrderStatus,
   ): Promise<OrderDTO> {
     const order = await this.ordersRepo.updateOrderStatus(orderId, status);
+
+    await this.emailProducerService.sendEmailTask({
+      email: order.user.email,
+      subject: 'Order Status Update',
+      message: `Your order status has been updated to: ${status}`,
+    });
+
+    if (status === OrderStatus.DELIVERED) {
+      await this.emailProducerService.sendEmailTask({
+        email: order.user.email,
+        subject: 'Order Delivered',
+        message: `Your order has been successfully delivered!`,
+      });
+    }
+
     return OrderDTO.fromEntity(order);
   }
 }

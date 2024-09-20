@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CartsModule } from 'src/carts/carts.module';
+import { EmailModule } from 'src/email/email.module';
 import { ProductsModule } from 'src/products/products.module';
 import { OrderItem } from './entities/order-item.entity';
 import { Order } from './entities/order.entity';
@@ -14,6 +15,7 @@ import { OrdersRepository } from './repositories/orders.repository';
     TypeOrmModule.forFeature([Order, OrderItem]),
     CartsModule,
     ProductsModule,
+    EmailModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, OrdersRepository, OrderItemsRepository],

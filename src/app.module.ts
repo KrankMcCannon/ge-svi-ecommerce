@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { ClientsModule } from '@nestjs/microservices';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -8,7 +9,10 @@ import { CartsModule } from './carts/carts.module';
 import { EnvironmentVariables } from './config/environment-variables';
 import { JwtAuthGuard } from './config/strategies/jwt-auth.guard';
 import { TestDataSource } from './data-source-test';
+import { EmailModule } from './email/email.module';
+import { OrdersModule } from './orders/orders.module';
 import { ProductsModule } from './products/products.module';
+import { getRabbitMQOptions } from './rabbitmq.config';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -39,10 +43,18 @@ import { UsersModule } from './users/users.module';
         };
       },
     }),
+    ClientsModule.register([
+      {
+        name: 'RABBITMQ_SERVICE',
+        ...getRabbitMQOptions(),
+      },
+    ]),
     CartsModule,
     ProductsModule,
     AuthModule,
     UsersModule,
+    OrdersModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [

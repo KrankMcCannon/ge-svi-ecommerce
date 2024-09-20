@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { EnvironmentVariables } from 'src/config/environment-variables';
 import { JwtStrategy } from 'src/config/strategies/jwt.strategy';
 import { LocalStrategy } from 'src/config/strategies/local.strategy';
+import { EmailModule } from 'src/email/email.module';
 import { UsersModule } from 'src/users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { EnvironmentVariables } from 'src/config/environment-variables';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { EnvironmentVariables } from 'src/config/environment-variables';
     }),
     UsersModule,
     PassportModule,
+    EmailModule,
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy],
   controllers: [AuthController],

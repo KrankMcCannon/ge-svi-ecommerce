@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { CustomException } from 'src/config/custom-exception';
 import { Errors } from 'src/config/errors';
+import { EmailProducerService } from 'src/email/email-producer.service';
 import { CreateUserDto } from 'src/users/dtos';
 import { UserDTO } from 'src/users/dtos/user.dto';
 import { UsersService } from '../users/users.service';
@@ -12,6 +13,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly emailProducerService: EmailProducerService,
   ) {}
 
   /**
@@ -59,6 +61,13 @@ export class AuthService {
    */
   async login(user: UserDTO): Promise<{ access_token: string }> {
     const payload = { email: user.email, sub: user.id };
+
+    await this.emailProducerService.sendEmailTask({
+      email: user.email,
+      subject: 'Login Notification',
+      message: `Hello ${user.email}, you have successfully logged in.`,
+    });
+
     return {
       access_token: this.jwtService.sign(payload),
     };
@@ -74,7 +83,15 @@ export class AuthService {
   async register(createUserDto: CreateUserDto): Promise<UserDTO> {
     try {
       await this.usersService.findByEmail(createUserDto.email);
-      return await this.usersService.create(createUserDto);
+      const user = await this.usersService.create(createUserDto);
+
+      await this.emailProducerService.sendEmailTask({
+        email: user.email,
+        subject: 'Welcome to Our Platform',
+        message: `Hello ${user.email}, your registration was successful.`,
+      });
+
+      return user;
     } catch (error) {
       if (error instanceof CustomException) {
         throw error;
