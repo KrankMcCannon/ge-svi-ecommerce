@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { RmqModule } from '../rmq.module';
+import { RmqModule } from './config/rmq.module';
 import { EmailController } from './email.controller';
 import { EmailService } from './email.service';
 

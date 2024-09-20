@@ -1,4 +1,49 @@
 services:
+  # Main Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nest-app
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: password
+      DATABASE_NAME: ge-svi-ecommerce
+      JWT_SECRET: super_secret
+      RABBITMQ_URI: amqp://rabbitmq:rabbitmq@rabbitmq:5672
+      RABBITMQ_QUEUE: EMAIL
+      SWAGGER_TITLE: "GE SVI Ecommerce API"
+      SWAGGER_DESCRIPTION: "API documentation for GE SVI Ecommerce"
+      SWAGGER_APP_VERSION: 1.0.0
+      PORT: 3000
+      IP: 0.0.0.0
+    ports:
+      - '3000:3000'
+    depends_on:
+      - postgres
+      - rabbitmq
+    volumes:
+      - ./src:/usr/src/app/src
+    command: yarn run start
+
+  # Microservice
+  microservice:
+    build:
+      context: .
+      dockerfile: microservice/Dockerfile
+    container_name: nest-microservice
+    environment:
+      RABBITMQ_URI: amqp://rabbitmq:rabbitmq@rabbitmq:5672
+      RABBITMQ_QUEUE: EMAIL
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./microservice:/usr/src/app/microservice
+    command: yarn run start
+
+  # PostgreSQL service
   postgres:
     image: postgres
     container_name: postgres
@@ -11,43 +56,31 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  postgres-test:
-    image: postgres
-    container_name: postgres-test
-    environment:
-      POSTGRES_USER: user_test
-      POSTGRES_PASSWORD: user_test_password
-      POSTGRES_DB: ge-svi-ecommerce-test
-    ports:
-      - "5433:5432"
-    volumes:
-      - pgdata-test:/var/lib/postgresql/data
-
+  # pgAdmin service
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: ex@mple.com
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
       - "5050:80"
     depends_on:
       - postgres
-      - postgres-test
 
+  # RabbitMQ service
   rabbitmq:
     image: rabbitmq:management
     container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: rabbitmq
       RABBITMQ_DEFAULT_PASS: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
 volumes:
   pgdata:
-  pgdata-test:
   rabbitmq_data:

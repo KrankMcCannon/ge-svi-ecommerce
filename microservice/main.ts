@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { EnvironmentVariables } from '../config/environment-variables';
+import { EnvironmentVariables } from './config/environment-variables';
 import { MicroserviceModule } from './microservice.module';
 
 async function bootstrap() {
