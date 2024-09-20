@@ -2,6 +2,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { CustomException } from 'src/config/custom-exception';
+import { EmailProducerService } from 'src/email/email-producer.service';
 import { UserDTO } from 'src/users/dtos/user.dto';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
@@ -29,12 +30,17 @@ describe('AuthService', () => {
     sign: jest.fn().mockReturnValue('token'),
   };
 
+  const mockEmailProducerService = {
+    sendEmailTask: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: UsersService, useValue: mockUsersService },
         { provide: JwtService, useValue: mockJwtService },
+        { provide: EmailProducerService, useValue: mockEmailProducerService },
       ],
     }).compile();
 

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CartDTO, CartItemDTO } from 'src/carts/dtos';
+import { EmailProducerService } from 'src/email/email-producer.service';
 import { ProductDTO } from 'src/products/dtos';
 import { UserDTO } from 'src/users/dtos';
 import { DataSource, EntityManager, QueryRunner } from 'typeorm';
@@ -99,6 +100,10 @@ describe('OrdersService', () => {
     saveProduct: jest.fn().mockResolvedValue(mockProduct),
   };
 
+  const mockEmailProducerService = {
+    sendEmailTask: jest.fn().mockResolvedValue(undefined),
+  };
+
   const mockEntityManager = {
     getRepository: jest.fn(),
   } as unknown as jest.Mocked<EntityManager>;
@@ -124,6 +129,7 @@ describe('OrdersService', () => {
         { provide: OrderItemsRepository, useValue: mockOrderItemsRepository },
         { provide: CartsService, useValue: mockCartsService },
         { provide: ProductsService, useValue: mockProductsService },
+        { provide: EmailProducerService, useValue: mockEmailProducerService },
         { provide: DataSource, useValue: mockDataSource },
       ],
     }).compile();

@@ -25,8 +25,8 @@ import { UsersModule } from './users/users.module';
           database: EnvironmentVariables.DATABASE_NAME,
           entities: [__dirname + '/**/*.entity.{js,ts}'],
           migrations: [__dirname + '/migrations/*.{js,ts}'],
-          synchronize: true,
-          logging: true,
+          synchronize: EnvironmentVariables.NODE_ENV === 'development',
+          logging: EnvironmentVariables.NODE_ENV === 'development',
         };
       },
     }),
