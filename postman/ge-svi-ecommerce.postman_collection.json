@@ -51,7 +51,7 @@
 							"variable": [
 								{
 									"key": "product_id",
-									"value": ""
+									"value": "{{product_id}}"
 								}
 							]
 						}
@@ -66,7 +66,7 @@
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.environment.set(\"product_id\", jsonData.id);",
+									"pm.environment.set(\"product_id\", jsonData.data.id);",
 									""
 								],
 								"type": "text/javascript",
@@ -223,7 +223,7 @@
 							"variable": [
 								{
 									"key": "product_id",
-									"value": ""
+									"value": "{{product_id}}"
 								}
 							]
 						}
@@ -243,7 +243,7 @@
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.environment.set(\"cart_id\", jsonData.id);",
+									"pm.environment.set(\"cart_id\", jsonData.data.id);",
 									""
 								],
 								"type": "text/javascript",
@@ -364,7 +364,7 @@
 							"variable": [
 								{
 									"key": "user_id",
-									"value": ""
+									"value": "{{user_id}}"
 								}
 							]
 						}
@@ -379,8 +379,9 @@
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.environment.set(\"access_token\", jsonData.access_token);",
-									"pm.environment.set(\"user_id\", jsonData.id);",
+									"console.log(jsonData);",
+									"pm.environment.set(\"access_token\", jsonData.data.access_token);",
+									"pm.environment.set(\"user_id\", jsonData.data.user_id);",
 									""
 								],
 								"type": "text/javascript",
@@ -552,7 +553,7 @@
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.environment.set(\"order_id\", jsonData.id);",
+									"pm.environment.set(\"order_id\", jsonData.data.id);",
 									""
 								],
 								"type": "text/javascript",

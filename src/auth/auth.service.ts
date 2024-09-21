@@ -64,7 +64,9 @@ export class AuthService {
    * @param user User data.
    * @returns Object containing the access token.
    */
-  async login(user: UserDTO): Promise<{ access_token: string }> {
+  async login(
+    user: UserDTO,
+  ): Promise<{ access_token: string; user_id: string }> {
     const payload = { email: user.email, sub: user.id };
 
     await this.emailProducerService.sendEmailTask({
@@ -75,6 +77,7 @@ export class AuthService {
 
     return {
       access_token: this.jwtService.sign(payload),
+      user_id: user.id,
     };
   }
 
