@@ -61,8 +61,8 @@ services:
     image: dpage/pgadmin4
     container_name: pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_EMAIL: admin@admin.com
+      PGADMIN_PASSWORD: admin
     ports:
       - "5050:80"
     depends_on:
@@ -73,8 +73,8 @@ services:
     image: rabbitmq:management
     container_name: rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: rabbitmq
-      RABBITMQ_DEFAULT_PASS: rabbitmq
+      RABBITMQ_USER: rabbitmq
+      RABBITMQ_PASS: rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"

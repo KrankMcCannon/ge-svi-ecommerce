@@ -159,64 +159,6 @@ export class EnvironmentVariables {
   }
 
   /**
-   * Mailgun API key
-   * @returns {string} The API key for Mailgun (MAILGUN_API_KEY)
-   */
-  static get MAILGUN_API_KEY(): string {
-    return process.env.MAILGUN_API_KEY!;
-  }
-
-  /**
-   * Mailgun API ID
-   * @returns {string} The API ID for Mailgun (MAILGUN_API_ID)
-   */
-  static get MAILGUN_API_ID(): string {
-    return process.env.MAILGUN_API_ID!;
-  }
-
-  /**
-   * Mailgun signed key
-   * @returns {string} The signed key for Mailgun (MAILGUN_SIGNED_KEY)
-   */
-  static get MAILGUN_SIGNED_KEY(): string {
-    return process.env.MAILGUN_SIGNED_KEY!;
-  }
-
-  /**
-   * Mailgun user
-   * @returns {string} The user for Mailgun (MAILGUN_USER)
-   */
-  static get MAILGUN_USER(): string {
-    return process.env.MAILGUN_USER!;
-  }
-
-  /**
-   * Mailgun email
-   * @returns {string} The email for Mailgun (MAILGUN_EMAIL)
-   */
-  static get MAILGUN_EMAIL(): string {
-    return process.env.MAILGUN_EMAIL!;
-  }
-
-  /**
-   * Mailgun port
-   * Default: 587
-   * @returns {number} The port for Mailgun (MAILGUN_PORT)
-   */
-  static get MAILGUN_PORT(): number {
-    return __getNumberWithDefault(process.env.MAILGUN_PORT, 587);
-  }
-
-  /**
-   * Mailgun host
-   * Default: 'smtp.mailgun.org'
-   * @returns {string} The host for Mailgun (MAILGUN_HOST)
-   */
-  static get MAILGUN_HOST(): string {
-    return __getStringWithDefault(process.env.MAILGUN_HOST, 'smtp.mailgun.org');
-  }
-
-  /**
    * RabbitMQ URI
    * Default: 'amqp://rabbitmq:rabbitmq@localhost:5672'
    * @returns {string} The URI for RabbitMQ (RABBITMQ_URI)
@@ -235,5 +177,41 @@ export class EnvironmentVariables {
    */
   static get RABBITMQ_QUEUE(): string {
     return __getStringWithDefault(process.env.RABBITMQ_QUEUE, 'email');
+  }
+
+  /**
+   * RabbitMQ user
+   * Default: 'rabbitmq'
+   * @returns {string} The user for RabbitMQ (RABBITMQ_USER)
+   */
+  static get RABBITMQ_USER(): string {
+    return __getStringWithDefault(process.env.RABBITMQ_USER, 'rabbitmq');
+  }
+
+  /**
+   * RabbitMQ password
+   * Default: 'rabbitmq'
+   * @returns {string} The password for RabbitMQ (RABBITMQ_PASS)
+   */
+  static get RABBITMQ_PASS(): string {
+    return __getStringWithDefault(process.env.RABBITMQ_PASS, 'rabbitmq');
+  }
+
+  /**
+   * pgAdmin email
+   * Default: 'admin@admin.com'
+   * @returns {string} The email to log in pgAdmin
+   */
+  static get PGADMIN_EMAIL(): string {
+    return __getStringWithDefault(process.env.PGADMIN_EMAIL, 'admin@admin.com');
+  }
+
+  /**
+ * pgAdmin password
+ * Default: 'admin'
+ * @returns {string} The password to log in pgAdmin
+ */
+  static get PGADMIN_PASSWORD(): string {
+    return __getStringWithDefault(process.env.PGADMIN_PASSWORD, 'admin');
   }
 }

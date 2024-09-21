@@ -6,7 +6,7 @@ Welcome to the **GE SVI Ecommerce API** project! This project is built using **N
 1. **Main Application**: The API for handling e-commerce functionalities.
 2. **Microservice**: A RabbitMQ-driven microservice for processing asynchronous tasks (e.g., sending emails).
 
-This guide will walk you through how to set up and run the project locally using **Docker** and **Docker Compose**. No deep knowledge of Docker is required—just follow the steps, and you'll have everything running smoothly!
+This guide will walk you through how to set up and run the project locally using **Docker** and **Docker Compose**. No deep knowledge of Docker is required, just follow the steps, and you'll have everything running smoothly!
 
 ---
 
@@ -18,7 +18,8 @@ This guide will walk you through how to set up and run the project locally using
 4. [Running the Project](#running-the-project)
 5. [Accessing Services](#accessing-services)
 6. [Environment Variables](#environment-variables)
-7. [Troubleshooting](#troubleshooting)
+7. [Postman Setup](#postman-collection)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -28,6 +29,7 @@ Before you begin, make sure you have the following tools installed on your machi
 
 - **Docker**: Download and install from [Docker's official website](https://www.docker.com/get-started).
 - **Docker Compose**: This comes with Docker, but ensure it's available by running `docker-compose --version`.
+- **Postman**: Download and install Postman from [Postman's official website](https://www.postman.com/downloads/).
 
 ---
 
@@ -55,8 +57,10 @@ root/
 │   ├── service                 # Microservice Service
 │   └── module                  # Microservice Module
 │
+├── postman/                    # Postman collection and environment
+│
 ├── docker-compose.yml          # Docker Compose configuration
-├── .env                        # Environment variables configuration
+├── .env.example                # Environment variables configuration
 ├── package.json                # Node Package Manager
 └── yarn.lock                   # Detailed Libraries info
 ```
@@ -74,23 +78,32 @@ root/
    cd ge-svi-ecommerce
    ```
 
-2. **Set Up Environment Variables**
+2. **Create Your `.env` File**
 
-   The project uses a `.env` file to manage environment variables. You can customize the `.env` file based on your local setup.
+   The project uses a .env file to manage environment variables.
+   You need to create this file by copying the provided .env.example file.
+
+   ```bash
+   cp .env.example .env 
+   ```
 
    Here's an example `.env` file:
 
    ```bash
-   DATABASE_HOST=postgres
-   DATABASE_PORT=5432
-   DATABASE_USERNAME=postgres
-   DATABASE_PASSWORD=password
-   DATABASE_NAME=ge-svi-ecommerce
-   JWT_SECRET=my_super_mega_ultra_giga_secret
-   RABBITMQ_URI=amqp://rabbitmq:rabbitmq@rabbitmq:5672
-   RABBITMQ_QUEUE=EMAIL
+   NODE_ENV='development'
    PORT=3000
-   IP=0.0.0.0
+   IP='0.0.0.0'
+   DATABASE_HOST='localhost'
+   DATABASE_NAME='ge-svi-ecommerce'
+   DATABASE_PORT=5432
+   DATABASE_USERNAME='postgres'
+   DATABASE_PASSWORD='password'
+   SWAGGER_TITLE='GE SVI Ecommerce API'
+   SWAGGER_DESCRIPTION='API documentation for GE SVI Ecommerce'
+   SWAGGER_VERSION='1.0.0'
+   JWT_SECRET='my_super_mega_ultra_giga_secret'
+   RABBITMQ_URI='amqp://rabbitmq:rabbitmq@localhost:5672'
+   RABBITMQ_QUEUE='EMAIL'
    ```
 
    Feel free to adjust the variables if needed.
@@ -131,19 +144,24 @@ The project is configured to run all necessary services using **Docker Compose**
 
 ---
 
-## Postman Collection
+## Postman Setup
+
+### Step 1: Download and Install Postman
+
+If you haven't already, download and install Postman from the official website.
+
+### Step 2: Download the Postman Collection
 
 To simplify API testing, a Postman Collection has been provided.
 
-### Using the Postman Collection
-
 1. Download and import the Postman Collection and Environment:
+
    - [Download Collection](./postman/ge-svi-ecommerce.postman_collection.json)
    - [Download Environment](./postman/ge-svi-ecommerce.postman_environment.json)
 
 2. Open Postman and import the files by clicking the "Import" button in the top-left corner.
 
-### Authentication Flow in Postman
+### Step 3: Authentication Flow in Postman
 
 - First, call the **Register** endpoint.
 - Second, call the **Login** endpoint.
@@ -206,18 +224,24 @@ Here’s a summary of important environment variables you’ll encounter in the 
 
 | Variable                   | Description                                    |
 |----------------------------|------------------------------------------------|
+| `NODE_ENV`                 | Node Environment for the application           |
+| `PORT`                     | Port for the main application                  |
+| `IP`                       | IP address for the main application            |
 | `DATABASE_HOST`            | Hostname of the PostgreSQL server              |
+| `DATABASE_NAME`            | Name of the PostgreSQL database                |
 | `DATABASE_PORT`            | Port of the PostgreSQL server                  |
 | `DATABASE_USERNAME`        | PostgreSQL username                            |
 | `DATABASE_PASSWORD`        | PostgreSQL password                            |
-| `DATABASE_NAME`            | Name of the PostgreSQL database                |
+| `SWAGGER_TITLE`            | Swagger Documentation Title                    |
+| `SWAGGER_DESCRIPTION`      | Swagger Documentation Description              |
+| `SWAGGER_VERSION`          | Swagger Documentation Versioning               |
 | `JWT_SECRET`               | Secret for JWT token generation                |
 | `RABBITMQ_URI`             | RabbitMQ connection URI                        |
 | `RABBITMQ_QUEUE`           | RabbitMQ queue name (used by the microservice) |
-| `PORT`                     | Port for the main application                  |
-| `IP`                       | IP address for the main application            |
-| `PGADMIN_DEFAULT_EMAIL`    | Default email for pgAdmin login                |
-| `PGADMIN_DEFAULT_PASSWORD` | Default password for pgAdmin login             |
+| `RABBITMQ_USER`            | RabbitMQ username (used by the microservice)   |
+| `RABBITMQ_PASS`            | RabbitMQ password (used by the microservice)   |
+| `PGADMIN_EMAIL`            | Default email for pgAdmin login                |
+| `PGADMIN_PASSWORD`         | Default password for pgAdmin login             |
 
 ---
 
