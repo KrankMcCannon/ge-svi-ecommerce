@@ -74,7 +74,7 @@ export class ProductsService {
     manager?: EntityManager,
   ): Promise<ProductDTO> {
     const product = await this.productsRepo.findOneById(id, manager);
-    CustomLogger.info(`Product found with ID: ${product.id}`);
+    CustomLogger.info(`Product found with ID: ${product ? product.id : id}`);
     return ProductDTO.fromEntity(product);
   }
 
@@ -171,7 +171,9 @@ export class ProductsService {
     const product = await this.productsRepo.findOneById(
       createCommentDto.productId,
     );
-    CustomLogger.info(`Product found with ID: ${product.id}`);
+    CustomLogger.info(
+      `Product found with ID: ${product ? product.id : createCommentDto.productId}`,
+    );
     const comment = await this.commentRepo.addComment(
       createCommentDto,
       product,
@@ -198,13 +200,17 @@ export class ProductsService {
     },
   ): Promise<CommentDTO[]> {
     const product = await this.findProductById(productId);
-    CustomLogger.info(`Product found with ID: ${product.id}`);
+    CustomLogger.info(
+      `Product found with ID: ${product ? product.id : productId}`,
+    );
     const comments = await this.commentRepo.findAllComments(product.id, {
       pagination: options?.pagination,
       sort: options?.sort,
       filter: options?.filter,
     });
-    CustomLogger.info(`Found ${comments.length} comments for product ID: ${product.id}`);
+    CustomLogger.info(
+      `Found ${comments.length} comments for product ID: ${product.id}`,
+    );
     return comments.map(CommentDTO.fromEntity);
   }
 }

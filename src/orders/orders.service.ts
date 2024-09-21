@@ -117,7 +117,7 @@ export class OrdersService {
    */
   async findOrderById(orderId: string): Promise<OrderDTO> {
     const order = await this.ordersRepo.findOrderById(orderId);
-    CustomLogger.info(`Order found with ID: ${order.id}`);
+    CustomLogger.info(`Order found with ID: ${order ? order.id : orderId}`);
     return OrderDTO.fromEntity(order);
   }
 
@@ -169,7 +169,9 @@ export class OrdersService {
    */
   async findOrderItemById(orderItemId: string): Promise<OrderItemDTO> {
     const orderItem = await this.orderItemsRepo.findOrderItemById(orderItemId);
-    CustomLogger.info(`Order item found with ID: ${orderItem.id}`);
+    CustomLogger.info(
+      `Order item found with ID: ${orderItem ? orderItem.id : orderItemId}`,
+    );
     return OrderItemDTO.fromEntity(orderItem);
   }
 

@@ -56,8 +56,11 @@ export class CartsService {
     await queryRunner.startTransaction();
 
     try {
-      const user = await this.usersService.findById(userId, queryRunner.manager);
-      CustomLogger.info(`User found with ID: ${user.id}`);
+      const user = await this.usersService.findById(
+        userId,
+        queryRunner.manager,
+      );
+      CustomLogger.info(`User found with ID: ${user ? user.id : userId}`);
       const userEntity = UserDTO.toEntity(user);
       const product = await this.productsService.findProductById(
         addProductToCartDto.productId,
@@ -129,7 +132,7 @@ export class CartsService {
     manager?: EntityManager,
   ): Promise<CartDTO> {
     const cart = await this.cartsRepository.findCartById(cartId, manager);
-    CustomLogger.info(`Cart found with ID: ${cart.id}`);
+    CustomLogger.info(`Cart found with ID: ${cart ? cart.id : cartId}`);
     return CartDTO.fromEntity(cart);
   }
 
@@ -172,12 +175,14 @@ export class CartsService {
 
     try {
       const cart = await this.findCartById(cartId, queryRunner.manager);
-      CustomLogger.info(`Cart found with ID: ${cart.id}`);
+      CustomLogger.info(`Cart found with ID: ${cart ? cart.id : cartId}`);
       const cartItem = await this.cartItemRepository.findCartItemById(
         cartItemId,
         queryRunner.manager,
       );
-      CustomLogger.info(`Cart item found with ID: ${cartItem.id}`);
+      CustomLogger.info(
+        `Cart item found with ID: ${cartItem ? cartItem.id : cartItemId}`,
+      );
 
       if (cartItem.cart.id !== cart.id) {
         throw CustomException.fromErrorEnum(Errors.E_0021_CART_FETCH_ERROR, {
@@ -204,7 +209,9 @@ export class CartsService {
         cartItem.product.id,
         queryRunner.manager,
       );
-      CustomLogger.info(`Product found with ID: ${product.id}`);
+      CustomLogger.info(
+        `Product found with ID: ${product ? product.id : cartItem.product.id}`,
+      );
       product.stock += 1;
       await this.productsService.saveProduct(product, queryRunner.manager);
       CustomLogger.info(`Product stock updated to ${product.stock}`);

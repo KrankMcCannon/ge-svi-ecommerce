@@ -23,6 +23,7 @@ export class UsersService {
    */
   async create(createUserDto: CreateUserDto): Promise<UserDTO> {
     await this.usersRepo.findByEmail(createUserDto.email);
+    CustomLogger.info('User correctly not found');
 
     const { password, ...userData } = createUserDto;
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -44,7 +45,7 @@ export class UsersService {
    */
   async findByEmail(email: string): Promise<UserWithPasswordDTO> {
     const user = await this.usersRepo.findByEmail(email);
-    CustomLogger.info(`User found with email: ${user.email}`);
+    CustomLogger.info(`User found with email: ${user ? user.email : email}`);
     return UserWithPasswordDTO.fromEntity(user);
   }
 
@@ -57,7 +58,7 @@ export class UsersService {
    */
   async findById(id: string, manager?: EntityManager): Promise<UserDTO> {
     const user = await this.usersRepo.findById(id, manager);
-    CustomLogger.info(`User found with ID: ${user.id}`);
+    CustomLogger.info(`User found with ID: ${user ? user.id : id}`);
     return UserDTO.fromEntity(user);
   }
 
@@ -75,7 +76,7 @@ export class UsersService {
 
     try {
       const user = await this.usersRepo.findById(id, queryRunner.manager);
-      CustomLogger.info(`User found with ID: ${user.id}`);
+      CustomLogger.info(`User found with ID: ${user ? user.id : id}`);
       if (updateUserDto.password) {
         updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
       }
@@ -114,6 +115,7 @@ export class UsersService {
 
     try {
       await this.findById(id, queryRunner.manager);
+      CustomLogger.info(`User found with ID: ${id}`);
       await this.usersRepo.deleteUser(id, queryRunner.manager);
       CustomLogger.info(`User deleted with ID: ${id}`);
       await queryRunner.commitTransaction();

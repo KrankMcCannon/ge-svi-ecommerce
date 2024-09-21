@@ -31,7 +31,9 @@ export class AuthService {
   ): Promise<UserDTO> {
     try {
       const user = await this.usersService.findByEmail(inputEmail);
-      CustomLogger.info(`User found with email: ${user.email}`);
+      CustomLogger.info(
+        `User found with email: ${user ? user.email : inputEmail}`,
+      );
 
       const isPasswordValid = await bcrypt.compare(
         inputPassword.trim(),

@@ -182,25 +182,25 @@ export class EnvironmentVariables {
   /**
    * RabbitMQ user
    * Default: 'rabbitmq'
-   * @returns {string} The user for RabbitMQ (RABBITMQ_USER)
+   * @returns {string} The user for RabbitMQ (RABBITMQ_DEFAULT_USER)
    */
-  static get RABBITMQ_USER(): string {
-    return __getStringWithDefault(process.env.RABBITMQ_USER, 'rabbitmq');
+  static get RABBITMQ_DEFAULT_USER(): string {
+    return __getStringWithDefault(process.env.RABBITMQ_DEFAULT_USER, 'rabbitmq');
   }
 
   /**
    * RabbitMQ password
    * Default: 'rabbitmq'
-   * @returns {string} The password for RabbitMQ (RABBITMQ_PASS)
+   * @returns {string} The password for RabbitMQ (RABBITMQ_DEFAULT_PASS)
    */
-  static get RABBITMQ_PASS(): string {
-    return __getStringWithDefault(process.env.RABBITMQ_PASS, 'rabbitmq');
+  static get RABBITMQ_DEFAULT_PASS(): string {
+    return __getStringWithDefault(process.env.RABBITMQ_DEFAULT_PASS, 'rabbitmq');
   }
 
   /**
    * pgAdmin email
    * Default: 'admin@admin.com'
-   * @returns {string} The email to log in pgAdmin
+   * @returns {string} The email to log in pgAdmin (PGADMIN_DEFAULT_EMAIL)
    */
   static get PGADMIN_DEFAULT_EMAIL(): string {
     return __getStringWithDefault(process.env.PGADMIN_DEFAULT_EMAIL, 'admin@admin.com');
@@ -209,7 +209,7 @@ export class EnvironmentVariables {
   /**
  * pgAdmin password
  * Default: 'admin'
- * @returns {string} The password to log in pgAdmin
+ * @returns {string} The password to log in pgAdmin (PGADMIN_DEFAULT_PASSWORD)
  */
   static get PGADMIN_DEFAULT_PASSWORD(): string {
     return __getStringWithDefault(process.env.PGADMIN_DEFAULT_PASSWORD, 'admin');
