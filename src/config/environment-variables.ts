@@ -202,8 +202,8 @@ export class EnvironmentVariables {
    * Default: 'admin@admin.com'
    * @returns {string} The email to log in pgAdmin
    */
-  static get PGADMIN_EMAIL(): string {
-    return __getStringWithDefault(process.env.PGADMIN_EMAIL, 'admin@admin.com');
+  static get PGADMIN_DEFAULT_EMAIL(): string {
+    return __getStringWithDefault(process.env.PGADMIN_DEFAULT_EMAIL, 'admin@admin.com');
   }
 
   /**
@@ -211,7 +211,7 @@ export class EnvironmentVariables {
  * Default: 'admin'
  * @returns {string} The password to log in pgAdmin
  */
-  static get PGADMIN_PASSWORD(): string {
-    return __getStringWithDefault(process.env.PGADMIN_PASSWORD, 'admin');
+  static get PGADMIN_DEFAULT_PASSWORD(): string {
+    return __getStringWithDefault(process.env.PGADMIN_DEFAULT_PASSWORD, 'admin');
   }
 }

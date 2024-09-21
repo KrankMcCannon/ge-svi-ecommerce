@@ -104,6 +104,8 @@ root/
    JWT_SECRET='my_super_mega_ultra_giga_secret'
    RABBITMQ_URI='amqp://rabbitmq:rabbitmq@localhost:5672'
    RABBITMQ_QUEUE='EMAIL'
+   PGADMIN_DEFAULT_EMAIL='admin@admin.com'
+   PGADMIN_DEFAULT_PASSWORD='admin'
    ```
 
    Feel free to adjust the variables if needed.
@@ -240,8 +242,8 @@ Here’s a summary of important environment variables you’ll encounter in the 
 | `RABBITMQ_QUEUE`           | RabbitMQ queue name (used by the microservice) |
 | `RABBITMQ_USER`            | RabbitMQ username (used by the microservice)   |
 | `RABBITMQ_PASS`            | RabbitMQ password (used by the microservice)   |
-| `PGADMIN_EMAIL`            | Default email for pgAdmin login                |
-| `PGADMIN_PASSWORD`         | Default password for pgAdmin login             |
+| `PGADMIN_DEFAULT_EMAIL`    | Default email for pgAdmin login                |
+| `PGADMIN_DEFAULT_PASSWORD` | Default password for pgAdmin login             |
 
 ---
 
