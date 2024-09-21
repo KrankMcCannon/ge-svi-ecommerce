@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { CustomException } from 'src/config/custom-exception';
+import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
 import { DataSource, EntityManager } from 'typeorm';
 import { CreateUserDto, UpdateUserDto, UserWithPasswordDTO } from './dtos';
@@ -30,6 +31,7 @@ export class UsersService {
       ...userData,
       password: hashedPassword,
     });
+    CustomLogger.info(`User created with email: ${user.email}`);
     return UserDTO.fromEntity(user);
   }
 
@@ -42,6 +44,7 @@ export class UsersService {
    */
   async findByEmail(email: string): Promise<UserWithPasswordDTO> {
     const user = await this.usersRepo.findByEmail(email);
+    CustomLogger.info(`User found with email: ${user.email}`);
     return UserWithPasswordDTO.fromEntity(user);
   }
 
@@ -54,6 +57,7 @@ export class UsersService {
    */
   async findById(id: string, manager?: EntityManager): Promise<UserDTO> {
     const user = await this.usersRepo.findById(id, manager);
+    CustomLogger.info(`User found with ID: ${user.id}`);
     return UserDTO.fromEntity(user);
   }
 
@@ -71,6 +75,7 @@ export class UsersService {
 
     try {
       const user = await this.usersRepo.findById(id, queryRunner.manager);
+      CustomLogger.info(`User found with ID: ${user.id}`);
       if (updateUserDto.password) {
         updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
       }
@@ -80,6 +85,7 @@ export class UsersService {
         updateUserDto,
         queryRunner.manager,
       );
+      CustomLogger.info(`User updated with ID: ${updatedUser.id}`);
       await queryRunner.commitTransaction();
       return UserDTO.fromEntity(updatedUser);
     } catch (error) {
@@ -109,6 +115,7 @@ export class UsersService {
     try {
       await this.findById(id, queryRunner.manager);
       await this.usersRepo.deleteUser(id, queryRunner.manager);
+      CustomLogger.info(`User deleted with ID: ${id}`);
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();

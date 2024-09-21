@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { CustomException } from 'src/config/custom-exception';
+import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
 import { EmailProducerService } from 'src/email/email-producer.service';
 import { CreateUserDto } from 'src/users/dtos';
@@ -30,6 +31,7 @@ export class AuthService {
   ): Promise<UserDTO> {
     try {
       const user = await this.usersService.findByEmail(inputEmail);
+      CustomLogger.info(`User found with email: ${user.email}`);
 
       const isPasswordValid = await bcrypt.compare(
         inputPassword.trim(),
@@ -41,6 +43,7 @@ export class AuthService {
         });
       }
 
+      CustomLogger.info(`User validated with email: ${user.email}`);
       return UserDTO.fromPasswordDTO(user);
     } catch (error) {
       if (error instanceof CustomException) {
@@ -83,7 +86,9 @@ export class AuthService {
   async register(createUserDto: CreateUserDto): Promise<UserDTO> {
     try {
       await this.usersService.findByEmail(createUserDto.email);
+      CustomLogger.info(`User correctly not exists`);
       const user = await this.usersService.create(createUserDto);
+      CustomLogger.info(`User created with email: ${user.email}`);
 
       await this.emailProducerService.sendEmailTask({
         email: user.email,

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CustomException } from 'src/config/custom-exception';
+import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { ProductDTO } from 'src/products/dtos';
@@ -9,7 +10,6 @@ import { ProductsService } from '../products/products.service';
 import { UsersService } from '../users/users.service';
 import { AddCartItemToCartDto, CartItemDTO } from './dtos';
 import { CartDTO } from './dtos/cart.dto';
-import { Cart } from './entities';
 import { CartItemsRepository } from './repositories/cart-items.repository';
 import { CartsRepository } from './repositories/carts.repository';
 
@@ -31,24 +31,12 @@ export class CartsService {
    * @returns The newly created cart.
    */
   async createCart(userId: string, manager?: EntityManager): Promise<CartDTO> {
-    const user = await this.usersService.findById(userId);
-    if (!user) {
-      throw CustomException.fromErrorEnum(Errors.E_0043_USER_NOT_FOUND, {
-        data: { id: userId },
-      });
-    }
-
+    const user = await this.usersService.findById(userId, manager);
+    CustomLogger.info(`User found with ID: ${user.id}`);
     const userEntity = UserDTO.toEntity(user);
-    const cart = await this.cartsRepository.createCart(userEntity);
-
-    let savedCart: Cart;
-    if (manager) {
-      savedCart = await manager.save(cart);
-    } else {
-      savedCart = await this.cartsRepository.saveCart(cart);
-    }
-
-    return CartDTO.fromEntity(savedCart);
+    const cart = await this.cartsRepository.createCart(userEntity, manager);
+    CustomLogger.info(`Cart created with ID: ${cart.id}`);
+    return CartDTO.fromEntity(cart);
   }
 
   /**
@@ -68,12 +56,14 @@ export class CartsService {
     await queryRunner.startTransaction();
 
     try {
-      const user = await this.usersService.findById(userId);
+      const user = await this.usersService.findById(userId, queryRunner.manager);
+      CustomLogger.info(`User found with ID: ${user.id}`);
       const userEntity = UserDTO.toEntity(user);
       const product = await this.productsService.findProductById(
         addProductToCartDto.productId,
         queryRunner.manager,
       );
+      CustomLogger.info(`Product found with ID: ${product.id}`);
       const productEntity = ProductDTO.toEntity(product);
 
       if (addProductToCartDto.quantity > product.stock) {
@@ -88,9 +78,11 @@ export class CartsService {
         addProductToCartDto.quantity,
         queryRunner.manager,
       );
+      CustomLogger.info(`Product added to cart with ID: ${cart.id}`);
 
       product.stock -= addProductToCartDto.quantity;
       await this.productsService.saveProduct(product, queryRunner.manager);
+      CustomLogger.info(`Product stock updated to ${product.stock}`);
 
       await queryRunner.commitTransaction();
 
@@ -128,6 +120,7 @@ export class CartsService {
         data: { userId },
       });
     }
+    CustomLogger.info(`Cart found with ID: ${cart.id}`);
     return CartDTO.fromEntity(cart);
   }
 
@@ -136,11 +129,7 @@ export class CartsService {
     manager?: EntityManager,
   ): Promise<CartDTO> {
     const cart = await this.cartsRepository.findCartById(cartId, manager);
-    if (!cart) {
-      throw CustomException.fromErrorEnum(Errors.E_0025_CART_NOT_FOUND, {
-        data: { id: cartId },
-      });
-    }
+    CustomLogger.info(`Cart found with ID: ${cart.id}`);
     return CartDTO.fromEntity(cart);
   }
 
@@ -166,6 +155,7 @@ export class CartsService {
       manager,
       query,
     );
+    CustomLogger.info(`Found ${cartItems.length} cart items`);
     return cartItems.map(CartItemDTO.fromEntity);
   }
 
@@ -182,10 +172,12 @@ export class CartsService {
 
     try {
       const cart = await this.findCartById(cartId, queryRunner.manager);
+      CustomLogger.info(`Cart found with ID: ${cart.id}`);
       const cartItem = await this.cartItemRepository.findCartItemById(
         cartItemId,
         queryRunner.manager,
       );
+      CustomLogger.info(`Cart item found with ID: ${cartItem.id}`);
 
       if (cartItem.cart.id !== cart.id) {
         throw CustomException.fromErrorEnum(Errors.E_0021_CART_FETCH_ERROR, {
@@ -198,20 +190,24 @@ export class CartsService {
           cartItemId,
           queryRunner.manager,
         );
+        CustomLogger.info(`Cart item removed with ID: ${cartItemId}`);
       } else {
         cartItem.quantity -= 1;
         await this.cartItemRepository.saveCartItem(
           cartItem,
           queryRunner.manager,
         );
+        CustomLogger.info(`Cart item updated with ID: ${cartItemId}`);
       }
 
       const product = await this.productsService.findProductById(
         cartItem.product.id,
         queryRunner.manager,
       );
+      CustomLogger.info(`Product found with ID: ${product.id}`);
       product.stock += 1;
       await this.productsService.saveProduct(product, queryRunner.manager);
+      CustomLogger.info(`Product stock updated to ${product.stock}`);
 
       await queryRunner.commitTransaction();
     } catch (error) {
@@ -237,6 +233,7 @@ export class CartsService {
   async deleteCart(cartId: string, manager?: EntityManager): Promise<void> {
     try {
       await this.cartsRepository.deleteCart(cartId, manager);
+      CustomLogger.info(`Cart deleted with ID: ${cartId}`);
     } catch (error) {
       if (error instanceof CustomException) {
         throw error;
@@ -257,6 +254,7 @@ export class CartsService {
   async clearCart(cartId: string, manager?: EntityManager): Promise<void> {
     try {
       await this.cartsRepository.clearCart(cartId, manager);
+      CustomLogger.info(`Cart cleared with ID: ${cartId}`);
     } catch (error) {
       if (error instanceof CustomException) {
         throw error;

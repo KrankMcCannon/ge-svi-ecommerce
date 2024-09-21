@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CartsService } from 'src/carts/carts.service';
 import { CartDTO, CartItemDTO } from 'src/carts/dtos';
+import { CustomLogger } from 'src/config/custom-logger';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { EmailProducerService } from 'src/email/email-producer.service';
 import { ProductDTO } from 'src/products/dtos';
@@ -41,12 +42,14 @@ export class OrdersService {
         userId,
         queryRunner.manager,
       );
+      CustomLogger.info(`Cart found with ID: ${cart.id}`);
       const cartEntity = CartDTO.toEntity(cart);
       const cartItems = await this.cartsService.findCartItems(
         cart.id,
         {},
         queryRunner.manager,
       );
+      CustomLogger.info(`Found ${cartItems.length} cart items`);
 
       const orderItems: OrderItem[] = [];
       let totalPrice = 0;
@@ -56,6 +59,7 @@ export class OrdersService {
           cartItem.product.id,
           queryRunner.manager,
         );
+        CustomLogger.info(`Product found with ID: ${product.id}`);
         const productEntity = ProductDTO.toEntity(product);
         const cartItemEntity = CartItemDTO.toEntity(cartItem);
         const orderItemEntity = new OrderItem();
@@ -66,6 +70,7 @@ export class OrdersService {
           orderItemEntity,
           queryRunner.manager,
         );
+        CustomLogger.info(`Order item created with ID: ${orderItem.id}`);
         orderItems.push(orderItem);
 
         orderDetails += `Product: ${productEntity.name}\n`;
@@ -80,8 +85,10 @@ export class OrdersService {
         orderItems,
         queryRunner.manager,
       );
+      CustomLogger.info(`Order created with ID: ${order.id}`);
 
       await this.cartsService.deleteCart(cartEntity.id, queryRunner.manager);
+      CustomLogger.info(`Cart deleted with ID: ${cartEntity.id}`);
 
       await queryRunner.commitTransaction();
 
@@ -110,6 +117,7 @@ export class OrdersService {
    */
   async findOrderById(orderId: string): Promise<OrderDTO> {
     const order = await this.ordersRepo.findOrderById(orderId);
+    CustomLogger.info(`Order found with ID: ${order.id}`);
     return OrderDTO.fromEntity(order);
   }
 
@@ -134,6 +142,7 @@ export class OrdersService {
       manager,
       query,
     );
+    CustomLogger.info(`Found ${orders.length} orders`);
     return orders.map(OrderDTO.fromEntity);
   }
 
@@ -147,6 +156,7 @@ export class OrdersService {
   async findOrderItemsByOrderId(orderId: string): Promise<OrderItemDTO[]> {
     const orderItems =
       await this.orderItemsRepo.findOrderItemsByOrderId(orderId);
+    CustomLogger.info(`Found ${orderItems.length} order items`);
     return orderItems.map(OrderItemDTO.fromEntity);
   }
 
@@ -159,6 +169,7 @@ export class OrdersService {
    */
   async findOrderItemById(orderItemId: string): Promise<OrderItemDTO> {
     const orderItem = await this.orderItemsRepo.findOrderItemById(orderItemId);
+    CustomLogger.info(`Order item found with ID: ${orderItem.id}`);
     return OrderItemDTO.fromEntity(orderItem);
   }
 
@@ -175,6 +186,7 @@ export class OrdersService {
     status: OrderStatus,
   ): Promise<OrderDTO> {
     const order = await this.ordersRepo.updateOrderStatus(orderId, status);
+    CustomLogger.info(`Order updated with ID: ${order.id}`);
 
     await this.emailProducerService.sendEmailTask({
       email: order.user.email,

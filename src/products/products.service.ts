@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CustomException } from 'src/config/custom-exception';
+import { CustomLogger } from 'src/config/custom-logger';
 import { Errors } from 'src/config/errors';
 import { PaginationInfo } from 'src/config/pagination-info.dto';
 import { DataSource, EntityManager } from 'typeorm';
@@ -26,7 +27,9 @@ export class ProductsService {
   async createProduct(createProductDto: CreateProductDto): Promise<ProductDTO> {
     try {
       await this.productsRepo.findByName(createProductDto.name);
+      CustomLogger.info('Product correctly not exists');
       const product = await this.productsRepo.createProduct(createProductDto);
+      CustomLogger.info(`Product created with ID: ${product.id}`);
       return ProductDTO.fromEntity(product);
     } catch (error) {
       if (error instanceof CustomException) {
@@ -55,6 +58,7 @@ export class ProductsService {
     manager?: EntityManager,
   ): Promise<ProductDTO[]> {
     const products = await this.productsRepo.findAll(query, manager);
+    CustomLogger.info(`Found ${products.length} products`);
     return products.map(ProductDTO.fromEntity);
   }
 
@@ -70,6 +74,7 @@ export class ProductsService {
     manager?: EntityManager,
   ): Promise<ProductDTO> {
     const product = await this.productsRepo.findOneById(id, manager);
+    CustomLogger.info(`Product found with ID: ${product.id}`);
     return ProductDTO.fromEntity(product);
   }
 
@@ -94,6 +99,7 @@ export class ProductsService {
         updateProductDto,
         queryRunner.manager,
       );
+      CustomLogger.info(`Product updated with ID: ${updatedProduct.id}`);
       await queryRunner.commitTransaction();
       return ProductDTO.fromEntity(updatedProduct);
     } catch (error) {
@@ -122,6 +128,7 @@ export class ProductsService {
 
     try {
       await this.productsRepo.removeProduct(id, queryRunner.manager);
+      CustomLogger.info(`Product removed with ID: ${id}`);
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -150,6 +157,7 @@ export class ProductsService {
   ): Promise<ProductDTO> {
     const entity = ProductDTO.toEntity(inputProduct);
     const product = await this.productsRepo.saveProduct(entity, manager);
+    CustomLogger.info(`Product saved with ID: ${product.id}`);
     return ProductDTO.fromEntity(product);
   }
 
@@ -163,10 +171,12 @@ export class ProductsService {
     const product = await this.productsRepo.findOneById(
       createCommentDto.productId,
     );
+    CustomLogger.info(`Product found with ID: ${product.id}`);
     const comment = await this.commentRepo.addComment(
       createCommentDto,
       product,
     );
+    CustomLogger.info(`Comment created with ID: ${comment.id}`);
     return CommentDTO.fromEntity(comment);
   }
 
@@ -188,11 +198,13 @@ export class ProductsService {
     },
   ): Promise<CommentDTO[]> {
     const product = await this.findProductById(productId);
+    CustomLogger.info(`Product found with ID: ${product.id}`);
     const comments = await this.commentRepo.findAllComments(product.id, {
       pagination: options?.pagination,
       sort: options?.sort,
       filter: options?.filter,
     });
+    CustomLogger.info(`Found ${comments.length} comments for product ID: ${product.id}`);
     return comments.map(CommentDTO.fromEntity);
   }
 }
